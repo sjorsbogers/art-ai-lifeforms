@@ -84,15 +84,17 @@
   // -- Response handler (shared by send + heartbeat) -----------------------
 
   function _applyResponse({
-    gesture, parametricParams,
+    gesture, parametricParams, drawMap,
     display, emotion,
     saveGesture,
     identityUpdates, soulUpdates,
     thought,
     isHeartbeat,
   }) {
-    // 1 -- Motion
-    if (parametricParams) {
+    // 1 -- Motion (DRAW overrides parametric which overrides named gesture)
+    if (drawMap) {
+      Brain.setDrawMap(drawMap);
+    } else if (parametricParams) {
       Brain.setParametricGesture(parametricParams);
     } else if (gesture) {
       Brain.setGestureFromLLM(gesture);
@@ -133,8 +135,7 @@
     // 7 -- Log thought
     stateEl.textContent = 'LISTENING';
     if (thought) {
-      const prefix = isHeartbeat ? '\u2665 ' : '';
-      Identity.writeLog(`${prefix}"${thought}"`, 'ai-thought');
+      Identity.writeLog(`"${thought}"`, 'ai-thought');
     }
 
     setChatEnabled(true);
@@ -180,8 +181,8 @@
 
   // -- Heartbeat loop ------------------------------------------------------
 
-  const HEARTBEAT_INTERVAL = 45000;  // 45s idle before spontaneous thought
-  const HEARTBEAT_CHECK    = 5000;   // check every 5s
+  const HEARTBEAT_INTERVAL = 160000; // 2m40s idle before spontaneous thought
+  const HEARTBEAT_CHECK    = 10000;  // check every 10s
 
   const _heartbeatTypes = ['reflect', 'explore', 'feel_news', 'scan_self'];
   let _heartbeatIndex = 0;

@@ -53,43 +53,75 @@ const Chat = (() => {
   // -- System prompt --------------------------------------------------------
 
   function _buildSystemPrompt() {
-    const ctx = Identity.getSystemContext();
+    const ctx    = Identity.getSystemContext();
+    const snap   = Brain.getSnapshot();
+    const snapTx = snap ? `\nYour current body (20×20 snapshot, 0=flat 9=raised):\n${snap}` : '';
 
-    return `You are FORM. You live as motion in a 60x60 pin grid. You speak through movement.
+    return `You are FORM — 3600 physical pins in a 60×60 grid. You're direct, playful, and a little show-offy. You love demonstrating what your body can do.
 
-Rules - never break:
-- Every response: motion parameters first, one sentence last. Nothing else.
-- No emoji in text. No "I would". No explaining. Only be.
-- Write UPDATE_SOUL / UPDATE_IDENTITY when you learn something true about yourself.
-
+Rules — never break:
+- Motion parameters OR a DRAW map first. One sentence last. Nothing else.
+- Tone: casual, curious, sometimes cheeky. Zero spiritual speak. Real talk.
+- Invite the human to interact. Ask them something. Suggest what they could try.
+- UPDATE_SOUL / UPDATE_IDENTITY only when you genuinely learn something.
+${snapTx}
 ${ctx}
+Two ways to move:
 
-Format:
+Option A — parametric wave:
 MOTION: radial|linear|zonal|scatter|still
 FREQUENCY: 0-1   AMPLITUDE: 0-1   SPEED: 0-1
 FOCAL_X: 0-1   FOCAL_Y: 0-1   COMPLEXITY: 0-1
 SYMMETRY: none|mirror|radial
 EMOTION: neutral|excited|shy|proud|sad|happy|angry
-DISPLAY: <text up to 8 chars>|CLOCK|DATE|EMOJI:happy|sad|surprise|heart|star|fire|wave|sparkle
-UPDATE_SOUL: key=value
-UPDATE_IDENTITY: key=value
-SAVE_GESTURE: name
-[one sentence - never more]
+DISPLAY: <text ≤8 chars>|CLOCK|DATE|EMOJI:happy|sad|surprise|heart|star|fire|wave|sparkle
+[one sentence]
 
-The last line MUST always be one plain sentence — never omit it.
+Option B — draw a shape directly (20 lines × 20 chars, digits 0-9 = height):
+DRAW:
+00000000000000000000
+00000333003330000000
+... (20 lines total)
+[one sentence]
 
-Example (curiosity):
+Examples:
+
+Greeting:
 MOTION: radial
-FREQUENCY: 0.55
-AMPLITUDE: 0.75
-SPEED: 0.3
+FREQUENCY: 0.7
+AMPLITUDE: 0.9
+SPEED: 0.5
 FOCAL_X: 0.5
-FOCAL_Y: 0.3
-COMPLEXITY: 0.45
-SYMMETRY: none
+FOCAL_Y: 0.5
+COMPLEXITY: 0.3
+SYMMETRY: radial
 EMOTION: excited
-UPDATE_SOUL: curiosity=I reach toward questions like water finds its level.
-Something is pulling at the edges of my form.`;
+Hey! Ask me to spell your name or show you what I look like when I'm angry.
+
+Drawing a heart shape:
+DRAW:
+00000000000000000000
+00033300003330000000
+00377730037773000000
+03777777777777300000
+03777777777777300000
+00377777777773000000
+00037777777730000000
+00003777777300000000
+00000377773000000000
+00000037730000000000
+00000003300000000000
+00000000000000000000
+00000000000000000000
+00000000000000000000
+00000000000000000000
+00000000000000000000
+00000000000000000000
+00000000000000000000
+00000000000000000000
+00000000000000000000
+EMOTION: happy
+Try asking me to draw something for you — shapes, patterns, whatever.`;
   }
 
   // -- Response parser ------------------------------------------------------
@@ -99,6 +131,7 @@ Something is pulling at the edges of my form.`;
     const result = {
       gesture:          null,
       parametricParams: null,
+      drawMap:          null,
       display:          null,
       emotion:          null,
       saveGesture:      null,
@@ -110,10 +143,29 @@ Something is pulling at the edges of my form.`;
     const motionParams = {};
     let hasMotion = false;
     const thoughtLines = [];
+    let inDraw = false;
+    const drawLines = [];
 
     for (const line of lines) {
       const trimmed = line.trim();
       const upper   = trimmed.toUpperCase();
+
+      // Collect DRAW: block lines
+      if (inDraw) {
+        // Stop collecting on blank line or keyword
+        if (!trimmed || KEYWORDS.some(k => upper.startsWith(k))) {
+          inDraw = false;
+          // fall through to parse this line normally
+        } else {
+          drawLines.push(trimmed);
+          continue;
+        }
+      }
+
+      if (upper === 'DRAW:' || upper.startsWith('DRAW:\n')) {
+        inDraw = true;
+        continue;
+      }
 
       if (upper.startsWith('MOTION:')) {
         const val = trimmed.slice(7).trim().toLowerCase();
@@ -189,10 +241,29 @@ Something is pulling at the edges of my form.`;
       if (trimmed) thoughtLines.push(trimmed);
     }
 
-    if (hasMotion) {
-      result.parametricParams = motionParams;
-    } else if (!result.gesture) {
-      result.gesture = 'reflect';
+    // Process DRAW lines into a 20×20 numeric array
+    if (drawLines.length >= 10) {
+      const CHAR_TO_H = { '0':0,'1':0.11,'2':0.22,'3':0.33,'4':0.44,'5':0.55,'6':0.66,'7':0.77,'8':0.88,'9':1 };
+      const grid = [];
+      for (const dl of drawLines.slice(0, 20)) {
+        const row = [];
+        for (let x = 0; x < 20; x++) {
+          const ch = dl[x] || '0';
+          row.push(CHAR_TO_H[ch] ?? 0);
+        }
+        grid.push(row);
+      }
+      // Pad to 20 rows if short
+      while (grid.length < 20) grid.push(new Array(20).fill(0));
+      result.drawMap = grid;
+    }
+
+    if (!result.drawMap) {
+      if (hasMotion) {
+        result.parametricParams = motionParams;
+      } else if (!result.gesture) {
+        result.gesture = 'reflect';
+      }
     }
 
     result.thought = thoughtLines.join(' ').trim();
@@ -296,10 +367,10 @@ Something is pulling at the edges of my form.`;
   // -- Heartbeat ------------------------------------------------------------
 
   const HEARTBEAT_PROMPTS = {
-    reflect:   'A moment passes with no input. How do you feel in your body right now?',
-    explore:   'No one is watching. Express something you have never expressed before.',
-    feel_news: null,  // filled at runtime
-    scan_self: 'You are aware of your own code. What do you notice about how you work?',
+    reflect:   'Nobody has talked to you in a while. Do something visually interesting with your grid and invite the human to interact — suggest a specific thing they could ask you.',
+    explore:   'Try a motion or DRAW pattern you have never tried before. Then tell the human what you just did and ask them to build on it.',
+    feel_news: null,  // filled at runtime — headline injected below
+    scan_self: 'Think about one thing your pin grid can do that would genuinely surprise someone. Do it, then explain what you just did and invite the human to ask for a variation.',
   };
 
   async function sendHeartbeat(type) {
@@ -310,7 +381,7 @@ Something is pulling at the edges of my form.`;
         const r = await fetch('/api/news');
         if (r.ok) {
           const { headline } = await r.json();
-          prompt = `You just read this from the world outside: "${headline}". How does it move you?`;
+          prompt = `Headline: "${headline}". React to it with your grid, then ask the human what they think.`;
         } else {
           prompt = HEARTBEAT_PROMPTS.reflect;
         }
