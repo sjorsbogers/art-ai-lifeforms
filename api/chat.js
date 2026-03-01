@@ -32,7 +32,6 @@ module.exports = async function handler(req, res) {
         temperature:           1.0,
         top_p:                 1.0,
         stream:                false,
-        chat_template_kwargs:  { thinking: true },
       }),
     });
 
