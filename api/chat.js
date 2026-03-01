@@ -1,61 +1,41 @@
 /**
- * api/chat.js — Edge runtime
- * Pipes NVIDIA / Kimi K2.5 SSE stream directly to the browser.
+ * api/chat.js
+ * Vercel serverless proxy — forwards chat requests to Groq / Llama 3.3 70B.
  * API key lives only in Vercel environment variables, never in code.
  */
 
-export const config = { runtime: 'edge' };
+module.exports = async function handler(req, res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-export default async function handler(req) {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, {
-      status: 200,
+  if (req.method === 'OPTIONS') return res.status(200).end();
+  if (req.method !== 'POST')   return res.status(405).json({ error: 'Method not allowed' });
+
+  const apiKey = process.env.GROQ_API_KEY;
+  if (!apiKey) return res.status(500).json({ error: 'GROQ_API_KEY not configured on server' });
+
+  try {
+    const { messages } = req.body;
+
+    const upstream = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
       headers: {
-        'Access-Control-Allow-Origin':  '*',
-        'Access-Control-Allow-Methods': 'POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type',
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type':  'application/json',
       },
+      body: JSON.stringify({
+        model:       'llama-3.3-70b-versatile',
+        messages,
+        max_tokens:  512,
+        temperature: 0.9,
+      }),
     });
+
+    const data = await upstream.json();
+    return res.status(upstream.status).json(data);
+
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
   }
-
-  if (req.method !== 'POST') {
-    return new Response('Method not allowed', { status: 405 });
-  }
-
-  const apiKey = process.env.NVIDIA_API_KEY;
-  if (!apiKey) {
-    return new Response(
-      JSON.stringify({ error: 'NVIDIA_API_KEY not configured on server' }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
-    );
-  }
-
-  const { messages } = await req.json();
-
-  const upstream = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${apiKey}`,
-      'Content-Type':  'application/json',
-      'Accept':        'text/event-stream',
-    },
-    body: JSON.stringify({
-      model:       'moonshotai/kimi-k2.5',
-      messages,
-      max_tokens:  512,
-      temperature: 1.0,
-      top_p:       1.0,
-      stream:      true,
-    }),
-  });
-
-  // Pipe NVIDIA's SSE stream straight through to the browser
-  return new Response(upstream.body, {
-    status: upstream.status,
-    headers: {
-      'Content-Type':                'text/event-stream',
-      'Cache-Control':               'no-cache',
-      'Access-Control-Allow-Origin': '*',
-    },
-  });
-}
+};

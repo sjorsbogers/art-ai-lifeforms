@@ -10,6 +10,8 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ## [Unreleased]
 
+- fix: switch from NVIDIA/Kimi to Groq/Llama-3.3-70B — faster, reliable, non-streaming
+
 - feat: enable streaming — Edge runtime proxy, live log entry, gesture fires on first token
 
 - fix: disable thinking mode on Kimi K2.5 to prevent 504 timeout, raise maxDuration to 60s
