@@ -1,0 +1,10 @@
+{
+  "redirects": [
+    { "source": "/", "destination": "/lifeforms/01-pin-grid/" }
+  ],
+  "functions": {
+    "api/chat.js": {
+      "maxDuration": 30
+    }
+  }
+}

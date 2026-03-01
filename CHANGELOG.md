@@ -10,6 +10,8 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ## [Unreleased]
 
+- feat: replace scripted brain with Kimi K2.5 LLM chat via Vercel serverless proxy — api/chat.js, chat.js, shortened boot sequence, chat UI in panel
+
 - chore: sync.sh now auto-updates CHANGELOG.md [Unreleased] on every sync
 
 ### Planned
