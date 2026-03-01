@@ -76,6 +76,8 @@ UPDATE_IDENTITY: key=value
 SAVE_GESTURE: name
 [one sentence - never more]
 
+The last line MUST always be one plain sentence — never omit it.
+
 Example (curiosity):
 MOTION: radial
 FREQUENCY: 0.55
