@@ -21,6 +21,41 @@
   const chatInput       = document.getElementById('chat-input');
   const chatSend        = document.getElementById('chat-send');
 
+  // -- Panel resize ---------------------------------------------------------
+
+  const panelResizer = document.getElementById('panel-resizer');
+  const panelTop     = document.getElementById('panel-top');
+
+  let _resizing = false;
+  let _resizeStartY = 0;
+  let _resizeStartH = 0;
+
+  panelResizer.addEventListener('mousedown', e => {
+    _resizing = true;
+    _resizeStartY = e.clientY;
+    _resizeStartH = panelTop.offsetHeight;
+    panelResizer.classList.add('dragging');
+    document.body.style.cursor = 'ns-resize';
+    document.body.style.userSelect = 'none';
+    e.preventDefault();
+  });
+
+  document.addEventListener('mousemove', e => {
+    if (!_resizing) return;
+    const dy  = e.clientY - _resizeStartY;
+    const min = 60;
+    const max = window.innerHeight - 220;
+    panelTop.style.height = Math.max(min, Math.min(_resizeStartH + dy, max)) + 'px';
+  });
+
+  document.addEventListener('mouseup', () => {
+    if (!_resizing) return;
+    _resizing = false;
+    panelResizer.classList.remove('dragging');
+    document.body.style.cursor = '';
+    document.body.style.userSelect = '';
+  });
+
   // -- Chat UI helpers -----------------------------------------------------
 
   function setChatEnabled(enabled) {

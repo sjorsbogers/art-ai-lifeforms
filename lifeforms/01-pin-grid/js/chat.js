@@ -201,26 +201,36 @@ Something is pulling at the edges of my form.`;
 
   // -- LLM call: Ollama first, Groq fallback --------------------------------
 
+  const OLLAMA_TAGS = 'http://localhost:11434/api/tags';
   const OLLAMA_URL  = 'http://localhost:11434/v1/chat/completions';
   const OLLAMA_MODEL = 'mistral';
 
-  async function _callLLM(messages) {
-    // 1. Try local Ollama (2.5s timeout — if not running, fail fast)
+  // Quick ping to check if Ollama is reachable (800ms max — doesn't run inference)
+  async function _isOllamaAvailable() {
     try {
-      const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 2500);
-      const res = await fetch(OLLAMA_URL, {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        signal:  controller.signal,
-        body: JSON.stringify({ model: OLLAMA_MODEL, messages, max_tokens: 180 }),
-      });
-      clearTimeout(timer);
-      if (res.ok) {
-        const data = await res.json();
-        return data.choices?.[0]?.message?.content ?? '';
-      }
-    } catch (_) { /* Ollama not running or CORS blocked — fall through */ }
+      const ctrl = new AbortController();
+      const t = setTimeout(() => ctrl.abort(), 800);
+      const res = await fetch(OLLAMA_TAGS, { signal: ctrl.signal });
+      clearTimeout(t);
+      return res.ok;
+    } catch (_) { return false; }
+  }
+
+  async function _callLLM(messages) {
+    // 1. Quick availability check, then inference with no timeout (Ollama can be slow)
+    if (await _isOllamaAvailable()) {
+      try {
+        const res = await fetch(OLLAMA_URL, {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ model: OLLAMA_MODEL, messages, max_tokens: 180 }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          return data.choices?.[0]?.message?.content ?? '';
+        }
+      } catch (_) { /* CORS or other — fall through to Groq */ }
+    }
 
     // 2. Fall back to Groq via Vercel proxy
     const res = await fetch('/api/chat', {

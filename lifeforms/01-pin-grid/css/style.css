@@ -111,6 +111,51 @@ html, body {
   overflow: hidden;
 }
 
+/* Top section — identity + soul, vertically scrollable, user-resizable height */
+#panel-top {
+  overflow-y: auto;
+  flex-shrink: 0;
+  height: 280px;    /* default; JS drag changes this */
+  min-height: 60px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+/* Drag handle between top section and log */
+#panel-resizer {
+  height: 8px;
+  flex-shrink: 0;
+  cursor: ns-resize;
+  background: transparent;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  position: relative;
+  transition: background 0.15s;
+}
+
+#panel-resizer::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 28px;
+  height: 2px;
+  background: var(--border);
+  border-radius: 2px;
+  transition: background 0.15s;
+}
+
+#panel-resizer:hover,
+#panel-resizer.dragging {
+  background: rgba(255,255,255,0.03);
+}
+
+#panel-resizer:hover::before,
+#panel-resizer.dragging::before {
+  background: var(--text-dim);
+}
+
 .panel-block {
   border-bottom: 1px solid var(--border);
   display: flex;
