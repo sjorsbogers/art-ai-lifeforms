@@ -1,14 +1,15 @@
 /**
  * api/identity.js
- * Vercel serverless endpoint — persists FORM's identity, soul,
+ * Vercel serverless endpoint -- persists FORM's identity, soul,
  * custom gestures, and emotional history in Vercel KV.
  *
- * GET  /api/identity          → { identity, soul, emotional_history, gestures }
- * GET  /api/identity?type=gestures → { name: params, ... }
- * POST /api/identity          → { identity?, soul?, emotion?, gestures? } → merge + save
+ * GET  /api/identity          -> { identity, soul, emotional_history, gestures }
+ * GET  /api/identity?type=gestures -> { name: params, ... }
+ * POST /api/identity          -> { identity?, soul?, emotion?, gestures? } -> merge + save
  */
 
-const { kv } = require('@vercel/kv');
+let kv;
+try { kv = require('@vercel/kv').kv; } catch (_) { kv = null; }
 
 const STATE_KEY   = 'form:state';
 const GESTURE_KEY = 'form:gestures';
@@ -26,9 +27,14 @@ module.exports = async function handler(req, res) {
 
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  // ── GET ───────────────────────────────────────────────────────────────────
+  // -- GET ------------------------------------------------------------------
 
   if (req.method === 'GET') {
+    if (!kv) {
+      if (req.query?.type === 'gestures') return res.status(200).json({});
+      return res.status(200).json(EMPTY_STATE());
+    }
+
     try {
       if (req.query?.type === 'gestures') {
         const gestures = await kv.get(GESTURE_KEY) || {};
@@ -43,13 +49,14 @@ module.exports = async function handler(req, res) {
     }
   }
 
-  // ── POST ──────────────────────────────────────────────────────────────────
+  // -- POST -----------------------------------------------------------------
 
   if (req.method === 'POST') {
+    if (!kv) return res.status(200).json({ ok: true });
+
     try {
       const { identity, soul, emotion, gestures } = req.body || {};
 
-      // Merge identity / soul
       if (identity || soul || emotion !== undefined) {
         const state = await kv.get(STATE_KEY) || EMPTY_STATE();
 
@@ -67,7 +74,6 @@ module.exports = async function handler(req, res) {
         await kv.set(STATE_KEY, state);
       }
 
-      // Merge custom gesture vocabulary
       if (gestures && typeof gestures === 'object') {
         const existing = await kv.get(GESTURE_KEY) || {};
         Object.assign(existing, gestures);

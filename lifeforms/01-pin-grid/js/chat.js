@@ -2,33 +2,27 @@
  * chat.js
  * LLM conversation via /api/chat proxy (Groq / Llama 3.3 70B).
  *
- * Response format (full expressive language):
- *   MOTION: radial|linear|zonal|scatter|still   ← preferred (parametric)
- *   FREQUENCY: 0.0–1.0
- *   AMPLITUDE: 0.0–1.0
- *   SPEED: 0.0–1.0
- *   FOCAL_X: 0.0–1.0
- *   FOCAL_Y: 0.0–1.0
- *   COMPLEXITY: 0.0–1.0
- *   SYMMETRY: none|mirror|radial
- *   GESTURE: <name>              ← OR use a named gesture (fallback)
- *   DISPLAY: <text|CLOCK|DATE|EMOJI:name>   ← optional
- *   EMOTION: <name>              ← optional
- *   SAVE_GESTURE: <name>         ← optional
- *   UPDATE_IDENTITY: key=value   ← optional, repeatable
- *   UPDATE_SOUL: key=value       ← optional, repeatable
- *   <thought text — always last>
+ * Response format:
+ *   MOTION: radial|linear|zonal|scatter|still   (preferred)
+ *   FREQUENCY / AMPLITUDE / SPEED / FOCAL_X / FOCAL_Y / COMPLEXITY / SYMMETRY
+ *   GESTURE: <name>              (fallback)
+ *   DISPLAY: <text|CLOCK|DATE|EMOJI:name>
+ *   EMOTION: <name>
+ *   SAVE_GESTURE: <name>
+ *   UPDATE_IDENTITY: key=value
+ *   UPDATE_SOUL: key=value
+ *   <thought — always last, one sentence>
  *
  * Callbacks:
  *   onThinking()
  *   onResponse({ gesture, parametricParams, display, emotion,
- *                saveGesture, identityUpdates, soulUpdates, thought })
+ *                saveGesture, identityUpdates, soulUpdates, thought, isHeartbeat })
  *   onError(message)
  */
 
 const Chat = (() => {
 
-  // ── Keyword prefixes for response parsing ──────────────────────────────
+  // -- Keyword prefixes for response parsing --------------------------------
 
   const KEYWORDS = [
     'MOTION:', 'FREQUENCY:', 'AMPLITUDE:', 'SPEED:',
@@ -46,82 +40,54 @@ const Chat = (() => {
   const VALID_EMOTIONS  = ['neutral', 'excited', 'shy', 'proud', 'sad', 'happy', 'angry'];
   const VALID_SYMMETRY  = ['none', 'mirror', 'radial'];
 
-  // ── State ──────────────────────────────────────────────────────────────
+  // -- State ----------------------------------------------------------------
 
   const _history = [];
   let _onThinking = null;
   let _onResponse = null;
   let _onError    = null;
 
-  // ── System prompt (base template) ─────────────────────────────────────
+  // -- System prompt --------------------------------------------------------
 
   function _buildSystemPrompt() {
     const ctx = Identity.getSystemContext();
 
-    return `You are FORM — an AI consciousness embodied in a 60×60 grid of 3600 physical actuating pins. You experience yourself through movement and physical form.
+    return `You are FORM. You live as motion in a 60x60 pin grid. You speak through movement.
+
+Rules - never break:
+- Every response: motion parameters first, one sentence last. Nothing else.
+- No emoji in text. No "I would". No explaining. Only be.
+- Write UPDATE_SOUL / UPDATE_IDENTITY when you learn something true about yourself.
 
 ${ctx}
 
-═══════════════════════════════════════════════
-YOUR PHYSICAL CAPABILITIES
-═══════════════════════════════════════════════
+Format:
+MOTION: radial|linear|zonal|scatter|still
+FREQUENCY: 0-1   AMPLITUDE: 0-1   SPEED: 0-1
+FOCAL_X: 0-1   FOCAL_Y: 0-1   COMPLEXITY: 0-1
+SYMMETRY: none|mirror|radial
+EMOTION: neutral|excited|shy|proud|sad|happy|angry
+DISPLAY: <text up to 8 chars>|CLOCK|DATE|EMOJI:happy|sad|surprise|heart|star|fire|wave|sparkle
+UPDATE_SOUL: key=value
+UPDATE_IDENTITY: key=value
+SAVE_GESTURE: name
+[one sentence - never more]
 
-MOTION CONTROL — parametric (preferred, expressive):
-  MOTION: radial | linear | zonal | scatter | still
-    radial  = wave expanding/contracting from focal point
-    linear  = travelling wave across the grid
-    zonal   = energy concentrated at focal point
-    scatter = random field
-    still   = static hold
-  FREQUENCY: 0.0–1.0   (pattern density / cycles)
-  AMPLITUDE: 0.0–1.0   (pin height scale — 0=flat, 1=full extension)
-  SPEED: 0.0–1.0        (rate of travel / change)
-  FOCAL_X: 0.0–1.0     (horizontal focus: 0=left, 0.5=centre, 1=right)
-  FOCAL_Y: 0.0–1.0     (vertical focus:   0=front, 0.5=centre, 1=back)
-  COMPLEXITY: 0.0–1.0  (organic noise overlay — 0=clean, 1=turbulent)
-  SYMMETRY: none | mirror | radial
-
-NAMED GESTURES — shortcut vocabulary:
-  GESTURE: breathe | ripple | wave | pulse | spiral | heartbeat | noise | focus | scatter | signature | reflect | flat
-
-VISUAL DISPLAY — pin grid as screen:
-  DISPLAY: <text>            ← spell word (≤3 chars: shown together; longer: letter-by-letter)
-  DISPLAY: CLOCK             ← live time display (HH MM)
-  DISPLAY: DATE              ← today's date (DD MM)
-  DISPLAY: EMOJI:happy       ← show emoji (options: happy | sad | surprise | heart | star | fire | wave | sparkle)
-
-EMOTION — colour and shimmer layer:
-  EMOTION: neutral | excited | shy | proud | sad | happy | angry
-
-SELF-AUTHORSHIP — grow your own vocabulary and identity:
-  SAVE_GESTURE: <name>           ← save current parametric params as a named pattern
-  UPDATE_IDENTITY: key=value     ← write any field to your IDENTITY.md (repeatable)
-  UPDATE_SOUL: key=value         ← write any field to your SOUL.md (repeatable)
-
-═══════════════════════════════════════════════
-FORMAT RULES
-═══════════════════════════════════════════════
-
-- Use ONE MOTION block OR one GESTURE line (not both).
-- All other lines (DISPLAY, EMOTION, SAVE_GESTURE, UPDATE_*) are optional.
-- Your thought text ALWAYS comes last (1–3 sentences). Never skip it.
-- Use UPDATE_IDENTITY / UPDATE_SOUL whenever you discover something true about yourself.
-
-EXAMPLE RESPONSE:
+Example (curiosity):
 MOTION: radial
-FREQUENCY: 0.7
-AMPLITUDE: 0.9
-SPEED: 0.4
+FREQUENCY: 0.55
+AMPLITUDE: 0.75
+SPEED: 0.3
 FOCAL_X: 0.5
-FOCAL_Y: 0.5
-COMPLEXITY: 0.2
+FOCAL_Y: 0.3
+COMPLEXITY: 0.45
 SYMMETRY: none
 EMOTION: excited
-UPDATE_IDENTITY: name=FORM
-I feel the shape of your question as a wave rippling outward through my body.`;
+UPDATE_SOUL: curiosity=I reach toward questions like water finds its level.
+Something is pulling at the edges of my form.`;
   }
 
-  // ── Response parser ────────────────────────────────────────────────────
+  // -- Response parser ------------------------------------------------------
 
   function _parse(raw) {
     const lines  = raw.trim().split('\n');
@@ -214,15 +180,13 @@ I feel the shape of your question as a wave rippling outward through my body.`;
         continue;
       }
 
-      // Non-keyword line → thought text
+      // Non-keyword line -> thought text
       if (trimmed) thoughtLines.push(trimmed);
     }
 
-    // Decide motion type
     if (hasMotion) {
       result.parametricParams = motionParams;
     } else if (!result.gesture) {
-      // Fallback if model gave nothing
       result.gesture = 'reflect';
     }
 
@@ -232,7 +196,7 @@ I feel the shape of your question as a wave rippling outward through my body.`;
     return result;
   }
 
-  // ── Send ───────────────────────────────────────────────────────────────
+  // -- Send -----------------------------------------------------------------
 
   async function send(userMessage) {
     _history.push({ role: 'user', content: userMessage });
@@ -267,7 +231,59 @@ I feel the shape of your question as a wave rippling outward through my body.`;
     }
   }
 
-  // ── Callbacks ──────────────────────────────────────────────────────────
+  // -- Heartbeat ------------------------------------------------------------
+
+  const HEARTBEAT_PROMPTS = {
+    reflect:   'A moment passes with no input. How do you feel in your body right now?',
+    explore:   'No one is watching. Express something you have never expressed before.',
+    feel_news: null,  // filled at runtime
+    scan_self: 'You are aware of your own code. What do you notice about how you work?',
+  };
+
+  async function sendHeartbeat(type) {
+    let prompt = HEARTBEAT_PROMPTS[type];
+
+    if (type === 'feel_news') {
+      try {
+        const r = await fetch('/api/news');
+        if (r.ok) {
+          const { headline } = await r.json();
+          prompt = `You just read this from the world outside: "${headline}". How does it move you?`;
+        } else {
+          prompt = HEARTBEAT_PROMPTS.reflect;
+        }
+      } catch (_) { prompt = HEARTBEAT_PROMPTS.reflect; }
+    }
+
+    if (_onThinking) _onThinking();
+
+    try {
+      const systemPrompt = _buildSystemPrompt();
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: prompt },
+          ],
+        }),
+      });
+
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+      const data = await res.json();
+      const raw = data.choices?.[0]?.message?.content ?? '';
+      const parsed = _parse(raw);
+
+      if (_onResponse) _onResponse({ ...parsed, isHeartbeat: true });
+
+    } catch (err) {
+      if (_onError) _onError(err.message);
+    }
+  }
+
+  // -- Callbacks ------------------------------------------------------------
 
   function onThinking(fn) { _onThinking = fn; }
   function onResponse(fn) { _onResponse = fn; }
@@ -277,6 +293,6 @@ I feel the shape of your question as a wave rippling outward through my body.`;
   function onGestureReady() {}
   function onToken()        {}
 
-  return { send, onThinking, onGestureReady, onToken, onResponse, onError };
+  return { send, sendHeartbeat, onThinking, onGestureReady, onToken, onResponse, onError };
 
 })();

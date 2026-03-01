@@ -194,7 +194,7 @@ const Brain = (() => {
 
     // Text: ≤3 chars shown all at once; longer = letter by letter
     const cleaned = text.trim().toUpperCase();
-    if (cleaned.replace(/\s/g, '').length <= 3) {
+    if (cleaned.replace(/\s/g, '').length <= 8) {
       _displayBitmap = Display.renderWord(cleaned);
       _scheduleDisplayClear(5000);
     } else {

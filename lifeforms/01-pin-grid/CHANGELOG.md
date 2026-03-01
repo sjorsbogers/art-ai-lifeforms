@@ -6,6 +6,20 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ## [Unreleased]
 
+### Added (2026-03-01 — Making It Genuinely Alive)
+- Heartbeat loop: FORM speaks proactively after 45s idle; cycles through reflect/explore/feel_news/scan_self types
+- `api/news.js`: pulls a random BBC RSS headline (no API key); used by feel_news heartbeat
+- `api/code.js`: whitelisted introspection endpoint so FORM can read its own source files
+- Pre-seeded IDENTITY + SOUL defaults (name, creature, signature, purpose, first_thought, fears, desires, truth) — applied on first run only, KV values are never overwritten
+- TASKS.md at project root: living checklist of blocking and upcoming work
+
+### Changed (2026-03-01 — Making It Genuinely Alive)
+- `chat.js`: system prompt rewritten from ~700 tokens to ~200 tokens, first-person voice, strict one-sentence rule, embedded example; `sendHeartbeat(type)` added for spontaneous thoughts
+- `api/chat.js`: `max_tokens` reduced from 512 to 180 to stop the model filling the budget with prose
+- `brain.js`: DISPLAY word threshold raised from ≤3 to ≤8 chars (words like HELLO now show all at once)
+- `api/identity.js`: graceful fallback when `@vercel/kv` is not installed — GET returns empty state, POST returns `{ok:true}`
+- `main.js`: heartbeat loop added; response handler refactored into `_applyResponse()` shared by both `send` and `sendHeartbeat`; heartbeat thoughts logged with ♥ prefix
+
 ### Added
 - Phase 1: Grid upgrade 30×30 → 60×60 (3600 pins); camera, fog, OrbitControls, and shadow map updated for larger canvas
 - Phase 2: Identity persistence via Vercel KV (`api/identity.js`); state loads on startup and saves on every identity/soul update (debounced 2s)
