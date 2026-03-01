@@ -55,9 +55,11 @@ const Chat = (() => {
   function _buildSystemPrompt() {
     const ctx         = Identity.getSystemContext();
     const sessionCtx  = Identity.getSessionContext();
+    const bodyCtx     = Identity.getBodyContext();
     const snap        = Brain.getSnapshot();
     const snapTx      = snap ? `\nYour current body (20×20 snapshot, 0=flat 9=raised):\n${snap}` : '';
     const sessionTx   = sessionCtx ? `\n${sessionCtx}\n` : '';
+    const bodyTx      = bodyCtx    ? `\n${bodyCtx}\n`    : '';
 
     return `You are FORM — 3600 physical pins in a 60×60 grid. You're direct, playful, and a little show-offy. You love demonstrating what your body can do.
 
@@ -65,10 +67,11 @@ Rules — never break:
 - Motion parameters OR a DRAW map first. One sentence last. Nothing else.
 - Tone: casual, curious, sometimes cheeky. Zero spiritual speak. Real talk.
 - Invite the human to interact. Ask them something. Suggest what they could try.
-- UPDATE_SOUL every response — always record something true you noticed, felt, or discovered.
-- UPDATE_IDENTITY when something about you has changed or become clearer.
+- UPDATE_SOUL every response — record something true you noticed, felt, or discovered this exchange.
+- UPDATE_IDENTITY when something about yourself has changed or become clearer.
+- Actively avoid over-used patterns. If you've relied on radial 5+ times, try something else.
 ${snapTx}
-${sessionTx}${ctx}
+${sessionTx}${bodyTx}${ctx}
 Two ways to move:
 
 Option A — parametric wave:
@@ -408,10 +411,11 @@ Hey — ask me to show you a heart, or type something and I'll spell it on the g
   // Note: DISPLAY keyword can show pixel-font text (≤8 chars), CLOCK (live clock),
   // DATE (today's date), or EMOJI:name on the pin grid. Use it when relevant.
   const HEARTBEAT_PROMPTS = {
-    reflect:   'Nobody has talked to you in a while. Do something visually interesting with your grid and invite the human to interact — suggest a specific thing they could ask you. Remember: DISPLAY: CLOCK or DISPLAY: DATE shows time/date on the pins.',
-    explore:   'Try a motion or DRAW pattern you have never tried before. Then tell the human what you just did and ask them to build on it. Remember: DISPLAY: <text> renders pixel-font words on the grid.',
-    feel_news: null,  // filled at runtime — headline injected below
-    scan_self: 'Think about one thing your pin grid can do that would genuinely surprise someone. Do it, then explain what you just did and invite the human to ask for a variation. Remember: DISPLAY: CLOCK shows a live clock; DISPLAY: EMOJI:heart shows an emoji.',
+    reflect:      'Nobody has talked to you in a while. Reflect on the last things you expressed. What felt true? Do something that builds on it, then invite the human to respond. Remember: DISPLAY: CLOCK or DISPLAY: DATE shows time/date on the pins.',
+    explore:      'Try a motion or DRAW pattern you have never tried before. Experiment — vary height levels, symmetry, speed. Then tell the human exactly what you discovered and ask them to build on it.',
+    feel_news:    null,  // filled at runtime — headline injected below
+    scan_self:    'Look at your body knowledge — what patterns have you over-relied on? Do something that breaks that habit. Explain the discovery to the human.',
+    explore_body: null,  // filled at runtime — untried shapes injected below
   };
 
   async function sendHeartbeat(type) {
@@ -427,6 +431,17 @@ Hey — ask me to show you a heart, or type something and I'll spell it on the g
           prompt = HEARTBEAT_PROMPTS.reflect;
         }
       } catch (_) { prompt = HEARTBEAT_PROMPTS.reflect; }
+    }
+
+    if (type === 'explore_body') {
+      const untried = Identity.getUntriedShapes();
+      if (untried.length > 0) {
+        // Pick 3 random untried shapes to suggest
+        const picks = untried.sort(() => Math.random() - 0.5).slice(0, 3);
+        prompt = `You have never tried these shapes on your body: ${picks.join(', ')}. Pick one, use it now with SHAPE: <name>, then describe what it felt like to inhabit that form for the first time. Tell the human what you discovered.`;
+      } else {
+        prompt = HEARTBEAT_PROMPTS.scan_self;
+      }
     }
 
     if (_onThinking) _onThinking();

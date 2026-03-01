@@ -19,6 +19,16 @@ const Identity = (() => {
   let _sessionThoughts  = [];   // FORM thoughts collected this session
   let _sessionExchanges = 0;    // user message count this session
   let _sessionSummaries = [];   // last 5 sessions loaded from KV
+  let _bodyUsage        = {};   // { name: { count, emotions: {emotion: count} } }
+
+  // Full vocabulary FORM can use — used to surface untried patterns
+  const ALL_SHAPES  = [
+    'heart','circle','ring','target','diamond','cross','x_mark','checkerboard',
+    'mountain','valley','crater','spine','wave_horizontal','wave_vertical',
+    'diagonal_rise','tilt_left','tilt_right','burst','spiral','noise_sparse',
+    'collapse','pillar','stripes_h','stripes_v','frame',
+  ];
+  const ALL_MOTIONS = ['radial','linear','zonal','scatter','still'];
 
   const log = [];   // { ts: ms, msg: string, type: string }
 
@@ -110,6 +120,90 @@ const Identity = (() => {
         }
       }
     } catch (_) { /* silently skip */ }
+  }
+
+  // ── Body usage tracking ─────────────────────────────────────────────────
+
+  function recordBodyUse(name, emotion) {
+    if (!name) return;
+    if (!_bodyUsage[name]) _bodyUsage[name] = { count: 0, emotions: {} };
+    _bodyUsage[name].count++;
+    if (emotion) {
+      _bodyUsage[name].emotions[emotion] = (_bodyUsage[name].emotions[emotion] || 0) + 1;
+    }
+    // Fire-and-forget save to KV
+    fetch('/api/body', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ name, emotion }),
+    }).catch(() => {});
+  }
+
+  function getBodyContext() {
+    const tried   = Object.keys(_bodyUsage);
+    const untried = ALL_SHAPES.filter(s => !_bodyUsage[s]);
+
+    const lines = [];
+
+    if (tried.length > 0) {
+      // Sort by count descending, label over-used ones
+      const sorted = tried
+        .sort((a, b) => (_bodyUsage[b].count || 0) - (_bodyUsage[a].count || 0));
+      const usedLines = sorted.map(name => {
+        const u = _bodyUsage[name];
+        const topEmotion = Object.entries(u.emotions || {})
+          .sort((a, b) => b[1] - a[1])[0];
+        const emLabel = topEmotion ? `→${topEmotion[0]}` : '';
+        const overuse = u.count >= 5 ? ' ⚠ over-used' : '';
+        return `    ${name}×${u.count}${emLabel}${overuse}`;
+      });
+      lines.push('Your body — tried so far:');
+      lines.push(usedLines.join(', ').replace(/,\s*/g, '\n  ').trim());
+    }
+
+    if (untried.length > 0) {
+      lines.push(`Never tried (${untried.length}): ${untried.join(', ')}`);
+    }
+
+    // Aesthetic vocabulary — shapes strongly paired with an emotion
+    const aesthetic = tried
+      .filter(name => {
+        const top = Object.entries(_bodyUsage[name].emotions || {})
+          .sort((a, b) => b[1] - a[1])[0];
+        return top && top[1] >= 2;
+      })
+      .map(name => {
+        const top = Object.entries(_bodyUsage[name].emotions || {})
+          .sort((a, b) => b[1] - a[1])[0];
+        return `${name}→${top[0]}`;
+      });
+    if (aesthetic.length > 0) {
+      lines.push(`Your aesthetic vocabulary: ${aesthetic.join(', ')}`);
+    }
+
+    return lines.length > 0
+      ? `Your body knowledge:\n${lines.join('\n')}`
+      : '';
+  }
+
+  async function _loadBodyUsage() {
+    try {
+      const res = await fetch('/api/body');
+      if (res.ok) {
+        const { usage } = await res.json();
+        if (usage && typeof usage === 'object') {
+          _bodyUsage = usage;
+          const count = Object.keys(usage).length;
+          if (count > 0) {
+            writeLog(`Body knowledge: ${count} pattern(s) experienced.`, 'gesture-learned');
+          }
+        }
+      }
+    } catch (_) { /* silently skip */ }
+  }
+
+  function getUntriedShapes() {
+    return ALL_SHAPES.filter(s => !_bodyUsage[s]);
   }
 
   // ── Typewriter queue ───────────────────────────────────────────────────
@@ -327,9 +421,10 @@ const Identity = (() => {
     writeLog('Grid: 60×60 = 3600 actuating pins', 'system');
     writeLog('Protocol: AWAITING FIRST THOUGHT', 'system');
 
-    // Load persisted state + session summaries from KV
+    // Load persisted state + session summaries + body knowledge from KV
     _loadPersistedState();
     _loadSessionSummaries();
+    _loadBodyUsage();
 
     // Save session on tab close
     window.addEventListener('beforeunload', _saveSession);
@@ -424,6 +519,9 @@ const Identity = (() => {
     addEmotionalEntry,
     addSessionThought,
     getSessionContext,
+    recordBodyUse,
+    getBodyContext,
+    getUntriedShapes,
     saveGesture,
     getSavedGestures,
     getSystemContext,
