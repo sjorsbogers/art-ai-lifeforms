@@ -1,6 +1,9 @@
 /**
  * chat.js
- * LLM conversation via /api/chat proxy (Groq / Llama 3.3 70B).
+ * LLM conversation — tries local Ollama first, falls back to Groq via /api/chat.
+ *
+ * Primary:  http://localhost:11434  (Ollama, free, unlimited, no API key)
+ * Fallback: /api/chat               (Groq / Llama 3.3 70B, free tier)
  *
  * Response format:
  *   MOTION: radial|linear|zonal|scatter|still   (preferred)
@@ -196,6 +199,41 @@ Something is pulling at the edges of my form.`;
     return result;
   }
 
+  // -- LLM call: Ollama first, Groq fallback --------------------------------
+
+  const OLLAMA_URL  = 'http://localhost:11434/v1/chat/completions';
+  const OLLAMA_MODEL = 'mistral';
+
+  async function _callLLM(messages) {
+    // 1. Try local Ollama (2.5s timeout — if not running, fail fast)
+    try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 2500);
+      const res = await fetch(OLLAMA_URL, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        signal:  controller.signal,
+        body: JSON.stringify({ model: OLLAMA_MODEL, messages, max_tokens: 180 }),
+      });
+      clearTimeout(timer);
+      if (res.ok) {
+        const data = await res.json();
+        return data.choices?.[0]?.message?.content ?? '';
+      }
+    } catch (_) { /* Ollama not running or CORS blocked — fall through */ }
+
+    // 2. Fall back to Groq via Vercel proxy
+    const res = await fetch('/api/chat', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages }),
+    });
+    if (res.status === 429) throw new Error('Rate limited (Groq). Run Ollama locally for unlimited free inference.');
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    return data.choices?.[0]?.message?.content ?? '';
+  }
+
   // -- Send -----------------------------------------------------------------
 
   async function send(userMessage) {
@@ -204,26 +242,13 @@ Something is pulling at the edges of my form.`;
 
     try {
       const systemPrompt = _buildSystemPrompt();
-
-      const res = await fetch('/api/chat', {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          messages: [
-            { role: 'system', content: systemPrompt },
-            ..._history,
-          ],
-        }),
-      });
-
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
-      const data = await res.json();
-      const raw  = data.choices?.[0]?.message?.content ?? '';
+      const raw = await _callLLM([
+        { role: 'system', content: systemPrompt },
+        ..._history,
+      ]);
 
       const parsed = _parse(raw);
       _history.push({ role: 'assistant', content: raw });
-
       if (_onResponse) _onResponse(parsed);
 
     } catch (err) {
@@ -259,23 +284,11 @@ Something is pulling at the edges of my form.`;
 
     try {
       const systemPrompt = _buildSystemPrompt();
-      const res = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: prompt },
-          ],
-        }),
-      });
-
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
-      const data = await res.json();
-      const raw = data.choices?.[0]?.message?.content ?? '';
+      const raw = await _callLLM([
+        { role: 'system', content: systemPrompt },
+        { role: 'user',   content: prompt },
+      ]);
       const parsed = _parse(raw);
-
       if (_onResponse) _onResponse({ ...parsed, isHeartbeat: true });
 
     } catch (err) {

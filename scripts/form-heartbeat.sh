@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 # form-heartbeat.sh
-# Runs an OpenClaw agent turn using the FORM skill (Groq/Llama-3.3-70B),
+# Runs an OpenClaw agent turn using the FORM skill (Ollama/mistral — free, local, no API key),
 # then pushes the raw response to the Vercel event queue so the browser picks it up.
+#
+# Requires: Ollama running locally (https://ollama.ai), mistral model pulled.
+#   ollama pull mistral
 #
 # Usage:
 #   ./scripts/form-heartbeat.sh [reflect|explore|feel_news|scan_self]
@@ -11,14 +14,6 @@
 #   */10 * * * * /path/to/scripts/form-heartbeat.sh >> /tmp/form-heartbeat.log 2>&1
 
 set -euo pipefail
-
-# Set GROQ_API_KEY in your environment or crontab before running:
-#   export GROQ_API_KEY="your-key-here"
-# Or in crontab: GROQ_API_KEY=your-key */10 * * * * /path/to/form-heartbeat.sh
-if [ -z "${GROQ_API_KEY:-}" ]; then
-  echo "ERROR: GROQ_API_KEY is not set. Export it before running."
-  exit 1
-fi
 
 VERCEL_URL="https://art-ai-lifeforms.vercel.app"
 HEARTBEAT_TYPE="${1:-reflect}"

@@ -10,26 +10,32 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ## [Unreleased]
 
-- feat(track-b): OpenClaw+Ollama autonomous brain — events queue, FORM skill, heartbeat script, browser polling
+### Added
+- **Ollama fallback in browser chat** — `chat.js` now tries local Ollama (`localhost:11434/mistral`) first with a 2.5s timeout; falls back to Groq/Llama-3.3-70B via Vercel if Ollama is not available. Eliminates rate-limit errors when running locally. (2026-03-01)
+- **OpenClaw switched to Ollama** — `openclaw models set ollama/mistral`; heartbeat script no longer requires `GROQ_API_KEY`. Autonomous heartbeats are now fully free and unlimited. (2026-03-01)
+- **README rewrite** — reflects full architecture: 60×60 grid, OpenClaw/Groq brain, Vercel KV (Upstash), all API endpoints, OpenClaw setup guide. (2026-03-01)
+- **TROUBLESHOOT.md** — build log documenting all issues encountered and how they were resolved. (2026-03-01)
 
-- feat: make FORM genuinely alive — system prompt rewrite, heartbeat loop, soul seed, news + code APIs
+### Fixed
+- Hardcoded `GROQ_API_KEY` removed from `scripts/form-heartbeat.sh`; key is now read from environment. (2026-03-01)
+- 429 rate-limit errors from Groq now show a helpful message pointing the user to Ollama. (2026-03-01)
 
-- feat: FORM Alive — radical system prompt rewrite (first-person, 200 tokens), max_tokens 512→180, pre-seeded soul/identity defaults, display threshold fix (≤8 chars), KV graceful fallback, 45s heartbeat loop with reflect/explore/feel_news/scan_self types, api/news.js (BBC RSS), api/code.js (self-introspection), TASKS.md (2026-03-01)
+---
 
-- feat: FORM Expansion — 60×60 grid, parametric gestures, display vocabulary, emotion colors, KV identity persistence, agentive self-authorship (2026-03-01)
+### Previous session (2026-03-01)
 
-- fix: switch from NVIDIA/Kimi to Groq/Llama-3.3-70B — faster, reliable, non-streaming
-
-- feat: enable streaming — Edge runtime proxy, live log entry, gesture fires on first token
-
-- fix: disable thinking mode on Kimi K2.5 to prevent 504 timeout, raise maxDuration to 60s
-
-- feat: replace scripted brain with Kimi K2.5 LLM chat via Vercel serverless proxy — api/chat.js, chat.js, shortened boot sequence, chat UI in panel
-
-- chore: sync.sh now auto-updates CHANGELOG.md [Unreleased] on every sync
+- feat(track-b): OpenClaw + autonomous brain — api/events.js event queue, FORM skill (openclaw-skill/SKILL.md), form-heartbeat.sh shell script, browser polling every 3s
+- feat: FORM genuinely alive — system prompt rewrite (200 tokens, first-person), max_tokens 512→180, pre-seeded soul/identity defaults, display threshold fix (≤8 chars), KV graceful fallback, 45s heartbeat loop (reflect/explore/feel_news/scan_self)
+- feat: api/news.js (BBC RSS, no API key), api/code.js (codebase self-introspection), TASKS.md
+- feat: FORM Expansion — 60×60 grid, parametric gestures (MOTION/FREQUENCY/…), display vocabulary, emotion colors, KV identity persistence
+- feat: Vercel KV wired via Upstash Redis marketplace integration (region: fra1)
+- fix: switch from NVIDIA/Kimi to Groq/Llama-3.3-70B
+- feat: enable streaming — Edge runtime proxy, live log entry
+- fix: disable thinking mode on Kimi K2.5 to prevent 504 timeout
 
 ### Planned
 - Extract shared pin grid engine to `core/`
+- Crontab setup for form-heartbeat.sh (every 10 minutes)
 
 ---
 
