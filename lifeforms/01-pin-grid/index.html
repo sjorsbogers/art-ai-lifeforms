@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Lifeform — Pin Grid</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div id="app">
+
+    <!-- 3D Canvas -->
+    <div id="canvas-container">
+      <div id="hud">
+        <div id="hud-state">
+          <span class="hud-label">STATE</span>
+          <span id="state-value">AWAKENING</span>
+        </div>
+        <div id="hud-gesture">
+          <span class="hud-label">GESTURE</span>
+          <span id="gesture-value">—</span>
+        </div>
+        <div id="hud-uptime">
+          <span class="hud-label">UPTIME</span>
+          <span id="uptime-value">00:00</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Identity Panel -->
+    <div id="panel">
+
+      <div class="panel-block">
+        <div class="panel-block-title">IDENTITY.md</div>
+        <pre id="identity-content" class="panel-pre"></pre>
+      </div>
+
+      <div class="panel-block">
+        <div class="panel-block-title">SOUL.md</div>
+        <pre id="soul-content" class="panel-pre"></pre>
+      </div>
+
+      <div class="panel-block panel-log-block">
+        <div class="panel-block-title">LOG</div>
+        <div id="log-content"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Three.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+  <!-- App modules (order matters) -->
+  <script src="js/config.js"></script>
+  <script src="js/gestures.js"></script>
+  <script src="js/identity.js"></script>
+  <script src="js/brain.js"></script>
+  <script src="js/scene.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>

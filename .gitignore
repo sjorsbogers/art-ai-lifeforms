@@ -1,0 +1,27 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Dependencies (for lifeforms that use npm/bun)
+node_modules/
+package-lock.json
+yarn.lock
+bun.lockb
+
+# Build output
+dist/
+build/
+.cache/
+out/
+
+# Environment / secrets
+.env
+.env.local
+.env.*.local
