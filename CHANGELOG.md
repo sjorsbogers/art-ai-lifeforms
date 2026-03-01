@@ -10,6 +10,8 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ## [Unreleased]
 
+- feat(track-b): OpenClaw+Ollama autonomous brain — events queue, FORM skill, heartbeat script, browser polling
+
 - feat: make FORM genuinely alive — system prompt rewrite, heartbeat loop, soul seed, news + code APIs
 
 - feat: FORM Alive — radical system prompt rewrite (first-person, 200 tokens), max_tokens 512→180, pre-seeded soul/identity defaults, display threshold fix (≤8 chars), KV graceful fallback, 45s heartbeat loop with reflect/explore/feel_news/scan_self types, api/news.js (BBC RSS), api/code.js (self-introspection), TASKS.md (2026-03-01)

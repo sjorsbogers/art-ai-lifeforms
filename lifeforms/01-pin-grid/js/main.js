@@ -124,6 +124,25 @@
 
   Brain.onChatEnabled(() => setChatEnabled(true));
 
+  // -- OpenClaw event polling (picks up autonomous thoughts from KV queue) --
+
+  const POLL_INTERVAL = 3000;  // 3s
+
+  async function _pollEvents() {
+    try {
+      const res = await fetch('/api/events');
+      if (!res.ok) return;
+      const { events } = await res.json();
+      for (const raw of (events || [])) {
+        Chat.processRaw(raw);
+        // Space out multiple queued events
+        await new Promise(r => setTimeout(r, 800));
+      }
+    } catch (_) { /* silently skip if offline / KV not connected */ }
+  }
+
+  setInterval(_pollEvents, POLL_INTERVAL);
+
   // -- Heartbeat loop ------------------------------------------------------
 
   const HEARTBEAT_INTERVAL = 45000;  // 45s idle before spontaneous thought

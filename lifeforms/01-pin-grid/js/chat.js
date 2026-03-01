@@ -293,6 +293,13 @@ Something is pulling at the edges of my form.`;
   function onGestureReady() {}
   function onToken()        {}
 
-  return { send, sendHeartbeat, onThinking, onGestureReady, onToken, onResponse, onError };
+  // -- processRaw: apply a raw LLM response string (used by events polling) -
+
+  function processRaw(raw) {
+    const parsed = _parse(raw);
+    if (_onResponse) _onResponse({ ...parsed, isHeartbeat: true });
+  }
+
+  return { send, sendHeartbeat, processRaw, onThinking, onGestureReady, onToken, onResponse, onError };
 
 })();
