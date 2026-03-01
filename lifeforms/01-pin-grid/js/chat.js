@@ -294,7 +294,7 @@ Hey — ask me to show you a heart, or type something and I'll spell it on the g
         return data.choices?.[0]?.message?.content ?? '';
       }
       if (res.status !== 429) throw new Error(`HTTP ${res.status}`);
-      // 429 = Groq + Gemini both exhausted — fall through to Ollama
+      // 429 = Gemini + Groq both exhausted — fall through to Ollama
       console.log('[FORM] Cloud APIs rate limited — trying Ollama');
     } catch (err) {
       if (!err.message.includes('429')) throw err;
