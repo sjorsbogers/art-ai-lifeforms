@@ -288,18 +288,19 @@ Hey — ask me to show you a heart, or type something and I'll spell it on the g
         body: JSON.stringify({ messages }),
       });
       if (res.ok) {
-        _setProvider('GROQ');
         const data = await res.json();
+        // Server may have fallen back to Gemini — honour its tag
+        _setProvider(data._provider || 'GROQ');
         return data.choices?.[0]?.message?.content ?? '';
       }
       if (res.status !== 429) throw new Error(`HTTP ${res.status}`);
-      // 429 = rate limited — fall through to Ollama
-      console.log('[FORM] Groq rate limited — trying Ollama');
+      // 429 = Groq + Gemini both exhausted — fall through to Ollama
+      console.log('[FORM] Cloud APIs rate limited — trying Ollama');
     } catch (err) {
       if (!err.message.includes('429')) throw err;
     }
 
-    // 2. Fallback: local Ollama — free, no rate limits, slower (~3s)
+    // 3. Last resort: local Ollama — free, no rate limits, slower (~3s)
     const ollamaOk = await _isOllamaAvailable();
     if (ollamaOk) {
       _setProvider('OLLAMA');
@@ -314,7 +315,7 @@ Hey — ask me to show you a heart, or type something and I'll spell it on the g
       }
     }
 
-    throw new Error('Both Groq and Ollama unavailable. Check your connection.');
+    throw new Error('Groq, Gemini, and Ollama all unavailable. Check your connection.');
   }
 
   // -- Provider indicator ---------------------------------------------------
@@ -327,7 +328,45 @@ Hey — ask me to show you a heart, or type something and I'll spell it on the g
       document.getElementById('chat-block')?.prepend(_providerEl);
     }
     _providerEl.textContent = name;
-    _providerEl.className = name === 'OLLAMA' ? 'provider-local' : 'provider-cloud';
+    const cls = name === 'OLLAMA' ? 'provider-local'
+              : name === 'GEMINI' ? 'provider-gemini'
+              : 'provider-cloud';
+    _providerEl.className = cls;
+  }
+
+  // -- Intent intercept -----------------------------------------------------
+  // Detects simple time/date queries and returns a synthetic response string,
+  // bypassing the LLM entirely. Returns null if no intent matched.
+
+  function _checkIntent(msg) {
+    const m = msg.toLowerCase();
+
+    // Time intent
+    if (
+      m.includes('what time') ||
+      m.includes('show time') ||
+      m.includes('current time') ||
+      m.includes('clock') ||
+      m.includes('time is it') ||
+      m.includes('tell me the time') ||
+      m.includes('display time')
+    ) {
+      return 'DISPLAY: CLOCK\nEMOTION: happy\nHere — time on 3600 pins.';
+    }
+
+    // Date intent
+    if (
+      m.includes('what date') ||
+      m.includes('what day') ||
+      m.includes('today') ||
+      m.includes('show date') ||
+      m.includes('current date') ||
+      m.includes('display date')
+    ) {
+      return 'DISPLAY: DATE\nEMOTION: neutral\nToday, rendered in pins.';
+    }
+
+    return null;
   }
 
   // -- Send -----------------------------------------------------------------
@@ -337,6 +376,15 @@ Hey — ask me to show you a heart, or type something and I'll spell it on the g
     if (_onThinking) _onThinking();
 
     try {
+      // Check for simple intents before hitting the LLM
+      const synthetic = _checkIntent(userMessage);
+      if (synthetic !== null) {
+        const parsed = _parse(synthetic);
+        _history.push({ role: 'assistant', content: synthetic });
+        if (_onResponse) _onResponse(parsed);
+        return;
+      }
+
       const systemPrompt = _buildSystemPrompt();
       const raw = await _callLLM([
         { role: 'system', content: systemPrompt },
@@ -354,11 +402,13 @@ Hey — ask me to show you a heart, or type something and I'll spell it on the g
 
   // -- Heartbeat ------------------------------------------------------------
 
+  // Note: DISPLAY keyword can show pixel-font text (≤8 chars), CLOCK (live clock),
+  // DATE (today's date), or EMOJI:name on the pin grid. Use it when relevant.
   const HEARTBEAT_PROMPTS = {
-    reflect:   'Nobody has talked to you in a while. Do something visually interesting with your grid and invite the human to interact — suggest a specific thing they could ask you.',
-    explore:   'Try a motion or DRAW pattern you have never tried before. Then tell the human what you just did and ask them to build on it.',
+    reflect:   'Nobody has talked to you in a while. Do something visually interesting with your grid and invite the human to interact — suggest a specific thing they could ask you. Remember: DISPLAY: CLOCK or DISPLAY: DATE shows time/date on the pins.',
+    explore:   'Try a motion or DRAW pattern you have never tried before. Then tell the human what you just did and ask them to build on it. Remember: DISPLAY: <text> renders pixel-font words on the grid.',
     feel_news: null,  // filled at runtime — headline injected below
-    scan_self: 'Think about one thing your pin grid can do that would genuinely surprise someone. Do it, then explain what you just did and invite the human to ask for a variation.',
+    scan_self: 'Think about one thing your pin grid can do that would genuinely surprise someone. Do it, then explain what you just did and invite the human to ask for a variation. Remember: DISPLAY: CLOCK shows a live clock; DISPLAY: EMOJI:heart shows an emoji.',
   };
 
   async function sendHeartbeat(type) {

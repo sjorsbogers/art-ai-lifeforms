@@ -21,40 +21,16 @@
   const chatInput       = document.getElementById('chat-input');
   const chatSend        = document.getElementById('chat-send');
 
-  // -- Panel resize ---------------------------------------------------------
+  // -- Accordion toggles (IDENTITY.md / SOUL.md) ----------------------------
 
-  const panelResizer = document.getElementById('panel-resizer');
-  const panelBottom  = document.getElementById('panel-bottom');
-
-  let _resizing = false;
-  let _resizeStartY = 0;
-  let _resizeStartH = 0;
-
-  panelResizer.addEventListener('mousedown', e => {
-    _resizing = true;
-    _resizeStartY = e.clientY;
-    _resizeStartH = panelBottom.offsetHeight;
-    panelResizer.classList.add('dragging');
-    document.body.style.cursor = 'ns-resize';
-    document.body.style.userSelect = 'none';
-    e.preventDefault();
-  });
-
-  document.addEventListener('mousemove', e => {
-    if (!_resizing) return;
-    // Dragging up = bigger identity panel, dragging down = smaller
-    const dy  = _resizeStartY - e.clientY;
-    const min = 60;
-    const max = window.innerHeight - 220;
-    panelBottom.style.height = Math.max(min, Math.min(_resizeStartH + dy, max)) + 'px';
-  });
-
-  document.addEventListener('mouseup', () => {
-    if (!_resizing) return;
-    _resizing = false;
-    panelResizer.classList.remove('dragging');
-    document.body.style.cursor = '';
-    document.body.style.userSelect = '';
+  document.querySelectorAll('.accordion-header').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const block = btn.closest('.accordion-block');
+      const body  = block.querySelector('.accordion-body');
+      const open  = btn.getAttribute('aria-expanded') === 'true';
+      btn.setAttribute('aria-expanded', open ? 'false' : 'true');
+      body.hidden = open;
+    });
   });
 
   // -- Chat UI helpers -----------------------------------------------------

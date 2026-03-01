@@ -30,7 +30,38 @@
     <!-- Identity Panel -->
     <div id="panel">
 
-      <!-- Chat input — fixed at top -->
+      <!-- Identity + Soul — collapsible accordions at top -->
+      <div id="panel-top">
+
+        <div class="accordion-block" id="accordion-identity">
+          <button class="accordion-header" data-target="accordion-identity" aria-expanded="false">
+            <span class="accordion-arrow">▶</span>
+            <span class="accordion-title">IDENTITY.md</span>
+          </button>
+          <div class="accordion-body" hidden>
+            <pre id="identity-content" class="panel-pre"></pre>
+          </div>
+        </div>
+
+        <div class="accordion-block" id="accordion-soul">
+          <button class="accordion-header" data-target="accordion-soul" aria-expanded="false">
+            <span class="accordion-arrow">▶</span>
+            <span class="accordion-title">SOUL.md</span>
+          </button>
+          <div class="accordion-body" hidden>
+            <pre id="soul-content" class="panel-pre"></pre>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Log — scrollable, grows to fill remaining space -->
+      <div class="panel-block panel-log-block">
+        <div class="panel-block-title">LOG</div>
+        <div id="log-content"></div>
+      </div>
+
+      <!-- Chat input — fixed at bottom -->
       <div id="chat-block">
         <input
           type="text"
@@ -41,28 +72,6 @@
           spellcheck="false"
         />
         <button id="chat-send" disabled>→</button>
-      </div>
-
-      <!-- Log — scrollable, below chat -->
-      <div class="panel-block panel-log-block">
-        <div class="panel-block-title">LOG</div>
-        <div id="log-content"></div>
-      </div>
-
-      <!-- Drag handle -->
-      <div id="panel-resizer" title="drag to resize"></div>
-
-      <!-- Identity + Soul — scrollable bottom section -->
-      <div id="panel-bottom">
-        <div class="panel-block">
-          <div class="panel-block-title">IDENTITY.md</div>
-          <pre id="identity-content" class="panel-pre"></pre>
-        </div>
-
-        <div class="panel-block">
-          <div class="panel-block-title">SOUL.md</div>
-          <pre id="soul-content" class="panel-pre"></pre>
-        </div>
       </div>
 
     </div>

@@ -111,49 +111,63 @@ html, body {
   overflow: hidden;
 }
 
-/* Bottom section — identity + soul, vertically scrollable, user-resizable height */
-#panel-bottom {
-  overflow-y: auto;
+/* Top section — collapsible identity + soul accordions */
+#panel-top {
   flex-shrink: 0;
-  height: 240px;    /* default; JS drag changes this */
-  min-height: 60px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* ── Accordion ───────────────────────────────── */
+
+.accordion-block {
+  border-bottom: 1px solid var(--border);
+}
+
+.accordion-block:last-child {
+  border-bottom: none;
+}
+
+.accordion-header {
+  width: 100%;
+  background: rgba(255,255,255,0.02);
+  border: none;
+  color: var(--text-dim);
+  font-family: var(--hud-font);
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  padding: 10px 16px 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-align: left;
+  transition: color 0.15s, background 0.15s;
+}
+
+.accordion-header:hover {
+  color: var(--text);
+  background: rgba(255,255,255,0.04);
+}
+
+.accordion-header[aria-expanded="true"] {
+  color: var(--accent);
+}
+
+.accordion-arrow {
+  font-size: 7px;
+  transition: transform 0.2s;
+  display: inline-block;
+}
+
+.accordion-header[aria-expanded="true"] .accordion-arrow {
+  transform: rotate(90deg);
+}
+
+.accordion-body {
+  overflow-y: auto;
+  max-height: 180px;
   scrollbar-width: thin;
   scrollbar-color: var(--border) transparent;
-}
-
-/* Drag handle between top section and log */
-#panel-resizer {
-  height: 8px;
-  flex-shrink: 0;
-  cursor: ns-resize;
-  background: transparent;
-  border-top: 1px solid var(--border);
-  border-bottom: 1px solid var(--border);
-  position: relative;
-  transition: background 0.15s;
-}
-
-#panel-resizer::before {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 28px;
-  height: 2px;
-  background: var(--border);
-  border-radius: 2px;
-  transition: background 0.15s;
-}
-
-#panel-resizer:hover,
-#panel-resizer.dragging {
-  background: rgba(255,255,255,0.03);
-}
-
-#panel-resizer:hover::before,
-#panel-resizer.dragging::before {
-  background: var(--text-dim);
 }
 
 .panel-block {
@@ -293,11 +307,17 @@ html, body {
   opacity: 0.7;
 }
 
-/* ── Chat input — fixed at top of panel ─────── */
+.provider-gemini {
+  color: #7b9cff;
+  border: 1px solid #7b9cff;
+  opacity: 0.7;
+}
+
+/* ── Chat input — fixed at bottom of panel ───── */
 
 #chat-block {
   display: flex;
-  border-bottom: 1px solid var(--border);
+  border-top: 1px solid var(--border);
   flex-shrink: 0;
 }
 
