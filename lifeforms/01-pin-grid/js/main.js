@@ -84,15 +84,17 @@
   // -- Response handler (shared by send + heartbeat) -----------------------
 
   function _applyResponse({
-    gesture, parametricParams, drawMap,
+    gesture, shape, parametricParams, drawMap,
     display, emotion,
     saveGesture,
     identityUpdates, soulUpdates,
     thought,
     isHeartbeat,
   }) {
-    // 1 -- Motion (DRAW overrides parametric which overrides named gesture)
-    if (drawMap) {
+    // 1 -- Motion (shape > draw > parametric > named gesture)
+    if (shape) {
+      Brain.setShape(shape);
+    } else if (drawMap) {
       Brain.setDrawMap(drawMap);
     } else if (parametricParams) {
       Brain.setParametricGesture(parametricParams);

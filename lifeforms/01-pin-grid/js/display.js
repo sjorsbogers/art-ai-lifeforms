@@ -661,6 +661,168 @@ const Display = (() => {
     return renderWord(`${dd} ${mo}`);
   }
 
+  // ── Shape library — pre-coded spatial patterns FORM can call by name ──
+
+  const SHAPES = (() => {
+    const C = GRID_COLS, R = GRID_ROWS, T = TOTAL_PINS;
+    const cx = C / 2, cy = R / 2;
+
+    function make(fn) {
+      const out = new Float32Array(T);
+      for (let r = 0; r < R; r++) {
+        for (let c = 0; c < C; c++) {
+          const nx = (c - cx) / cx;  // -1 to 1
+          const ny = (r - cy) / cy;
+          out[r * C + c] = Math.max(0, Math.min(1, fn(nx, ny, c, r)));
+        }
+      }
+      return out;
+    }
+
+    return {
+      // ── Geometric ───────────────────────────────────────────────────
+      circle: () => make((nx, ny) => {
+        const d = Math.sqrt(nx*nx + ny*ny);
+        return d < 0.7 ? 1 - d / 0.7 : 0;
+      }),
+
+      ring: () => make((nx, ny) => {
+        const d = Math.sqrt(nx*nx + ny*ny);
+        return Math.max(0, 1 - Math.abs(d - 0.65) * 10);
+      }),
+
+      target: () => make((nx, ny) => {
+        const d = Math.sqrt(nx*nx + ny*ny);
+        return 0.5 + 0.5 * Math.cos(d * Math.PI * 3);
+      }),
+
+      diamond: () => make((nx, ny) => {
+        const d = Math.abs(nx) + Math.abs(ny);
+        return d < 1 ? 1 - d : 0;
+      }),
+
+      cross: () => make((nx, ny) => {
+        return (Math.abs(nx) < 0.12 || Math.abs(ny) < 0.12) ? 1 : 0;
+      }),
+
+      x_mark: () => make((nx, ny) => {
+        const d1 = Math.abs(nx - ny);
+        const d2 = Math.abs(nx + ny);
+        return (d1 < 0.12 || d2 < 0.12) ? 1 : 0;
+      }),
+
+      checkerboard: () => make((nx, ny, c, r) => {
+        return ((Math.floor(c / 5) + Math.floor(r / 5)) % 2 === 0) ? 1 : 0;
+      }),
+
+      // ── Organic / emotional ─────────────────────────────────────────
+      heart: () => {
+        const out = new Float32Array(T);
+        for (let r = 0; r < R; r++) {
+          for (let c = 0; c < C; c++) {
+            const nx = (c - cx) / (cx * 0.7);
+            const ny = (r - cy * 0.85) / (cy * 0.7);
+            // Heart curve: (x²+y²-1)³ - x²y³ < 0
+            const hx = nx, hy = -ny;
+            const v = Math.pow(hx*hx + hy*hy - 1, 3) - hx*hx * hy*hy*hy;
+            out[r * C + c] = v < 0 ? Math.max(0, 1 + v * 0.5) : 0;
+          }
+        }
+        return out;
+      },
+
+      mountain: () => make((nx, ny) => {
+        const peak = Math.max(0, 1 - Math.sqrt(nx*nx + ny*ny) * 1.4);
+        return Math.pow(peak, 0.6);
+      }),
+
+      valley: () => make((nx, ny) => {
+        const d = Math.sqrt(nx*nx + ny*ny);
+        return d > 0.2 ? Math.min(1, (d - 0.2) * 1.5) : 0;
+      }),
+
+      crater: () => make((nx, ny) => {
+        const d = Math.sqrt(nx*nx + ny*ny);
+        if (d < 0.2) return 0;
+        if (d < 0.5) return (d - 0.2) / 0.3;
+        return Math.max(0, 1 - (d - 0.5) * 3);
+      }),
+
+      spine: () => make((nx, ny) => {
+        const ridge = Math.max(0, 1 - Math.abs(nx) * 8);
+        const taper = Math.max(0, 1 - Math.abs(ny) * 0.5);
+        return ridge * taper;
+      }),
+
+      // ── Directional / gestural ──────────────────────────────────────
+      wave_horizontal: () => make((nx, ny) => {
+        return 0.5 + 0.5 * Math.sin(ny * Math.PI * 2);
+      }),
+
+      wave_vertical: () => make((nx, ny) => {
+        return 0.5 + 0.5 * Math.sin(nx * Math.PI * 2);
+      }),
+
+      diagonal_rise: () => make((nx, ny) => {
+        return 0.5 + (nx - ny) * 0.4;
+      }),
+
+      tilt_left: () => make((nx) => {
+        return Math.max(0, 0.5 - nx * 0.7);
+      }),
+
+      tilt_right: () => make((nx) => {
+        return Math.max(0, 0.5 + nx * 0.7);
+      }),
+
+      burst: () => make((nx, ny) => {
+        const d = Math.sqrt(nx*nx + ny*ny);
+        const angle = Math.atan2(ny, nx);
+        return Math.max(0, 1 - d * 0.9) * (0.5 + 0.5 * Math.abs(Math.sin(angle * 6)));
+      }),
+
+      // ── Abstract ────────────────────────────────────────────────────
+      spiral: () => make((nx, ny) => {
+        const d = Math.sqrt(nx*nx + ny*ny);
+        const a = Math.atan2(ny, nx);
+        return Math.max(0, 1 - Math.abs((a + d * 6) % (Math.PI * 2) - Math.PI) / Math.PI * 2) * (1 - d);
+      }),
+
+      noise_sparse: () => {
+        const out = new Float32Array(T);
+        for (let i = 0; i < T; i++) {
+          out[i] = Math.random() < 0.15 ? Math.random() : 0;
+        }
+        return out;
+      },
+
+      collapse: () => make((nx, ny) => {
+        const d = Math.sqrt(nx*nx + ny*ny);
+        return d > 0.85 ? (d - 0.85) * 5 : 0;
+      }),
+
+      pillar: () => make((nx, ny) => {
+        return (Math.abs(nx) < 0.06 && Math.abs(ny) < 0.06) ? 1 : 0;
+      }),
+
+      stripes_h: () => make((nx, ny, c, r) => {
+        return (Math.floor(r / 4) % 2 === 0) ? 1 : 0;
+      }),
+
+      stripes_v: () => make((nx, ny, c) => {
+        return (Math.floor(c / 4) % 2 === 0) ? 1 : 0;
+      }),
+
+      frame: () => make((nx, ny) => {
+        return (Math.abs(nx) > 0.8 || Math.abs(ny) > 0.8) ? 1 : 0;
+      }),
+    };
+  })();
+
+  function renderShape(name) {
+    return SHAPES[name] ? SHAPES[name]() : null;
+  }
+
   // ── Public API ────────────────────────────────────────────────────────
 
   return {
@@ -669,6 +831,8 @@ const Display = (() => {
     renderEmoji,
     renderClock,
     renderDate,
+    renderShape,
+    shapeNames: () => Object.keys(SHAPES),
     emojiNames: Object.keys(EMOJI),
   };
 

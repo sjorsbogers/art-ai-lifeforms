@@ -293,6 +293,18 @@ const Brain = (() => {
     Identity.writeLog(`Gesture saved: "${name}"`, 'gesture-learned');
   }
 
+  // ── Named shape from shape library ─────────────────────────────────────
+
+  function setShape(name) {
+    const bitmap = Display.renderShape(name);
+    if (!bitmap) return false;
+    _clearDisplay();
+    _displayBitmap = bitmap;
+    _setHUD('gesture-value', name.toUpperCase());
+    _scheduleDisplayClear(8000);
+    return true;
+  }
+
   // ── Draw map — FORM draws a shape directly (20×20 grid upsampled) ───────
 
   function setDrawMap(grid20) {
@@ -339,6 +351,7 @@ const Brain = (() => {
     getCurrentParams:      () => _parametricParams,
     setGestureFromLLM,
     setParametricGesture,
+    setShape,
     setDrawMap,
     setDisplay,
     setEmotion,

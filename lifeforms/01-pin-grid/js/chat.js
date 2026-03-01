@@ -30,7 +30,7 @@ const Chat = (() => {
   const KEYWORDS = [
     'MOTION:', 'FREQUENCY:', 'AMPLITUDE:', 'SPEED:',
     'FOCAL_X:', 'FOCAL_Y:', 'COMPLEXITY:', 'SYMMETRY:',
-    'GESTURE:', 'DISPLAY:', 'EMOTION:', 'SAVE_GESTURE:',
+    'GESTURE:', 'SHAPE:', 'DISPLAY:', 'EMOTION:', 'SAVE_GESTURE:',
     'UPDATE_IDENTITY:', 'UPDATE_SOUL:',
   ];
 
@@ -77,16 +77,22 @@ EMOTION: neutral|excited|shy|proud|sad|happy|angry
 DISPLAY: <text ≤8 chars>|CLOCK|DATE|EMOJI:happy|sad|surprise|heart|star|fire|wave|sparkle
 [one sentence]
 
-Option B — draw a shape directly (20 lines × 20 chars, digits 0-9 = height):
-DRAW:
-00000000000000000000
-00000333003330000000
-... (20 lines total)
+Option B — named shape (shows for 8 seconds then returns to motion):
+SHAPE: <name>
+EMOTION: <emotion>
 [one sentence]
 
-Examples:
+Available shapes: heart, circle, ring, target, diamond, cross, x_mark, checkerboard,
+mountain, valley, crater, spine, wave_horizontal, wave_vertical, diagonal_rise,
+tilt_left, tilt_right, burst, spiral, noise_sparse, collapse, pillar,
+stripes_h, stripes_v, frame
 
-Greeting:
+Example — responding to "show me something beautiful":
+SHAPE: heart
+EMOTION: happy
+Ask me for a spiral, a mountain range, or try "what do you look like when you collapse?"
+
+Example — greeting:
 MOTION: radial
 FREQUENCY: 0.7
 AMPLITUDE: 0.9
@@ -96,32 +102,7 @@ FOCAL_Y: 0.5
 COMPLEXITY: 0.3
 SYMMETRY: radial
 EMOTION: excited
-Hey! Ask me to spell your name or show you what I look like when I'm angry.
-
-Drawing a heart shape:
-DRAW:
-00000000000000000000
-00033300003330000000
-00377730037773000000
-03777777777777300000
-03777777777777300000
-00377777777773000000
-00037777777730000000
-00003777777300000000
-00000377773000000000
-00000037730000000000
-00000003300000000000
-00000000000000000000
-00000000000000000000
-00000000000000000000
-00000000000000000000
-00000000000000000000
-00000000000000000000
-00000000000000000000
-00000000000000000000
-00000000000000000000
-EMOTION: happy
-Try asking me to draw something for you — shapes, patterns, whatever.`;
+Hey — ask me to show you a heart, or type something and I'll spell it on the grid.`;
   }
 
   // -- Response parser ------------------------------------------------------
@@ -130,6 +111,7 @@ Try asking me to draw something for you — shapes, patterns, whatever.`;
     const lines  = raw.trim().split('\n');
     const result = {
       gesture:          null,
+      shape:            null,
       parametricParams: null,
       drawMap:          null,
       display:          null,
@@ -196,6 +178,10 @@ Try asking me to draw something for you — shapes, patterns, whatever.`;
         continue;
       }
 
+      if (upper.startsWith('SHAPE:')) {
+        result.shape = trimmed.slice(6).trim().toLowerCase();
+        continue;
+      }
       if (upper.startsWith('GESTURE:')) {
         const name = trimmed.slice(8).trim().toLowerCase();
         if (VALID_GESTURES.includes(name)) result.gesture = name;
