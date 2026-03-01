@@ -10,6 +10,8 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ## [Unreleased]
 
+- feat: enable streaming — Edge runtime proxy, live log entry, gesture fires on first token
+
 - fix: disable thinking mode on Kimi K2.5 to prevent 504 timeout, raise maxDuration to 60s
 
 - feat: replace scripted brain with Kimi K2.5 LLM chat via Vercel serverless proxy — api/chat.js, chat.js, shortened boot sequence, chat UI in panel

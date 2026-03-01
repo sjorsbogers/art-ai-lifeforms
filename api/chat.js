@@ -1,44 +1,61 @@
 /**
- * api/chat.js
- * Vercel serverless proxy — forwards chat requests to NVIDIA / Kimi K2.5.
- * The API key lives ONLY in Vercel's environment variables, never in code.
+ * api/chat.js — Edge runtime
+ * Pipes NVIDIA / Kimi K2.5 SSE stream directly to the browser.
+ * API key lives only in Vercel environment variables, never in code.
  */
 
-module.exports = async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+export const config = { runtime: 'edge' };
 
-  if (req.method === 'OPTIONS') return res.status(200).end();
-  if (req.method !== 'POST')   return res.status(405).json({ error: 'Method not allowed' });
+export default async function handler(req) {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, {
+      status: 200,
+      headers: {
+        'Access-Control-Allow-Origin':  '*',
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type',
+      },
+    });
+  }
+
+  if (req.method !== 'POST') {
+    return new Response('Method not allowed', { status: 405 });
+  }
 
   const apiKey = process.env.NVIDIA_API_KEY;
-  if (!apiKey) return res.status(500).json({ error: 'NVIDIA_API_KEY not configured on server' });
-
-  try {
-    const { messages } = req.body;
-
-    const upstream = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type':  'application/json',
-        'Accept':        'application/json',
-      },
-      body: JSON.stringify({
-        model:                 'moonshotai/kimi-k2.5',
-        messages,
-        max_tokens:            512,
-        temperature:           1.0,
-        top_p:                 1.0,
-        stream:                false,
-      }),
-    });
-
-    const data = await upstream.json();
-    return res.status(upstream.status).json(data);
-
-  } catch (err) {
-    return res.status(500).json({ error: err.message });
+  if (!apiKey) {
+    return new Response(
+      JSON.stringify({ error: 'NVIDIA_API_KEY not configured on server' }),
+      { status: 500, headers: { 'Content-Type': 'application/json' } }
+    );
   }
-};
+
+  const { messages } = await req.json();
+
+  const upstream = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type':  'application/json',
+      'Accept':        'text/event-stream',
+    },
+    body: JSON.stringify({
+      model:       'moonshotai/kimi-k2.5',
+      messages,
+      max_tokens:  512,
+      temperature: 1.0,
+      top_p:       1.0,
+      stream:      true,
+    }),
+  });
+
+  // Pipe NVIDIA's SSE stream straight through to the browser
+  return new Response(upstream.body, {
+    status: upstream.status,
+    headers: {
+      'Content-Type':                'text/event-stream',
+      'Cache-Control':               'no-cache',
+      'Access-Control-Allow-Origin': '*',
+    },
+  });
+}

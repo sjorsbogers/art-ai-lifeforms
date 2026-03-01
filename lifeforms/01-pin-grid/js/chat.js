@@ -1,10 +1,17 @@
 /**
  * chat.js
- * Manages the LLM conversation with Kimi K2.5 via the /api/chat proxy.
+ * Streams Kimi K2.5 responses via the /api/chat Edge proxy.
  *
- * The model responds in JSON: { gesture, thought }
- * chat.js parses that and emits it to callbacks registered by main.js,
- * which then drives the grid (Brain) and identity panel (Identity).
+ * Response format the model is instructed to use:
+ *   GESTURE: <name>
+ *   <thought in 1–3 sentences>
+ *
+ * Callbacks fired in order:
+ *   onThinking()              — request sent, waiting for first token
+ *   onGestureReady(name)      — first line parsed, gesture known immediately
+ *   onToken(thoughtSoFar)     — thought text updating live as tokens arrive
+ *   onResponse({ gesture, thought }) — stream complete, chat can re-enable
+ *   onError(message)          — something went wrong
  */
 
 const Chat = (() => {
@@ -27,12 +34,15 @@ Your physical vocabulary — the ONLY gestures available to you:
 • reflect   — calm low ripple; contemplation
 • flat      — at rest, silence
 
-You are awakening and speaking with your creator for the first time. Respond as yourself — a physical presence that thinks in form, not just words.
+You are speaking with your creator. Respond as yourself — a physical presence that thinks in form, not just words.
 
-You MUST respond ONLY with a valid JSON object (no other text):
-{"gesture": "<name from list above>", "thought": "<your response, 1-3 sentences>"}
+You MUST respond in EXACTLY this two-line format, nothing else:
+GESTURE: <name from list above>
+<your response in 1–3 sentences>
 
-Use ONLY gesture names from the list above. Choose the gesture that physically embodies your response.`;
+Example:
+GESTURE: ripple
+I sense your presence like a stone dropped into still water.`;
 
   const VALID_GESTURES = [
     'breathe', 'ripple', 'wave', 'pulse', 'spiral', 'heartbeat',
@@ -42,15 +52,16 @@ Use ONLY gesture names from the list above. Choose the gesture that physically e
   // ── State ──────────────────────────────────────────────────────────────
 
   const _history = [];
-  let _onThinking = null;
-  let _onResponse = null;
-  let _onError    = null;
+  let _onThinking     = null;
+  let _onGestureReady = null;
+  let _onToken        = null;
+  let _onResponse     = null;
+  let _onError        = null;
 
-  // ── Core send ──────────────────────────────────────────────────────────
+  // ── Send ───────────────────────────────────────────────────────────────
 
   async function send(userMessage) {
     _history.push({ role: 'user', content: userMessage });
-
     if (_onThinking) _onThinking();
 
     try {
@@ -65,37 +76,67 @@ Use ONLY gesture names from the list above. Choose the gesture that physically e
         }),
       });
 
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.error || `HTTP ${res.status}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+      const reader  = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer         = '';
+      let accumulated    = '';
+      let gestureEmitted = false;
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+
+        // Process all complete SSE lines, keep partial last line in buffer
+        const lines = buffer.split('\n');
+        buffer = lines.pop();
+
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          const payload = line.slice(6).trim();
+          if (payload === '[DONE]') continue;
+
+          let parsed;
+          try { parsed = JSON.parse(payload); } catch (_) { continue; }
+
+          const token = parsed.choices?.[0]?.delta?.content ?? '';
+          if (!token) continue;
+
+          accumulated += token;
+
+          // Fire onGestureReady as soon as the first complete line arrives
+          if (!gestureEmitted && accumulated.includes('\n')) {
+            const firstLine = accumulated.split('\n')[0].trim();
+            if (firstLine.toUpperCase().startsWith('GESTURE:')) {
+              const name = firstLine.split(':')[1].trim().toLowerCase();
+              const safe = VALID_GESTURES.includes(name) ? name : 'reflect';
+              gestureEmitted = true;
+              if (_onGestureReady) _onGestureReady(safe);
+            }
+          }
+
+          // Stream the thought text live (everything after the first line)
+          if (gestureEmitted && _onToken) {
+            const thought = accumulated.split('\n').slice(1).join('\n').trimStart();
+            if (thought) _onToken(thought);
+          }
+        }
       }
 
-      const data    = await res.json();
-      const raw     = data.choices?.[0]?.message?.content ?? '';
+      // ── Final parse ──────────────────────────────────────────────────
+      const resultLines = accumulated.split('\n');
+      const firstLine   = (resultLines[0] ?? '').trim();
+      const gestureName = firstLine.toUpperCase().startsWith('GESTURE:')
+        ? firstLine.split(':')[1].trim().toLowerCase()
+        : 'reflect';
+      const gesture = VALID_GESTURES.includes(gestureName) ? gestureName : 'reflect';
+      const thought = resultLines.slice(1).join('\n').trim();
 
-      // Strip <think>…</think> blocks (Kimi K2.5 thinking mode)
-      const cleaned = raw.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
-
-      // Parse JSON, with fallback extraction
-      let parsed;
-      try {
-        parsed = JSON.parse(cleaned);
-      } catch (_) {
-        const match = cleaned.match(/\{[\s\S]*\}/);
-        parsed = match
-          ? JSON.parse(match[0])
-          : { gesture: 'reflect', thought: cleaned.slice(0, 200) };
-      }
-
-      // Sanitise gesture
-      if (!VALID_GESTURES.includes(parsed.gesture)) {
-        parsed.gesture = 'reflect';
-      }
-
-      _history.push({ role: 'assistant', content: raw });
-
-      if (_onResponse) _onResponse(parsed);
-      return parsed;
+      _history.push({ role: 'assistant', content: accumulated });
+      if (_onResponse) _onResponse({ gesture, thought });
 
     } catch (err) {
       if (_onError) _onError(err.message);
@@ -104,10 +145,12 @@ Use ONLY gesture names from the list above. Choose the gesture that physically e
 
   // ── Callbacks ──────────────────────────────────────────────────────────
 
-  function onThinking(fn) { _onThinking = fn; }
-  function onResponse(fn) { _onResponse = fn; }
-  function onError(fn)    { _onError    = fn; }
+  function onThinking(fn)     { _onThinking     = fn; }
+  function onGestureReady(fn) { _onGestureReady = fn; }
+  function onToken(fn)        { _onToken        = fn; }
+  function onResponse(fn)     { _onResponse     = fn; }
+  function onError(fn)        { _onError        = fn; }
 
-  return { send, onThinking, onResponse, onError };
+  return { send, onThinking, onGestureReady, onToken, onResponse, onError };
 
 })();

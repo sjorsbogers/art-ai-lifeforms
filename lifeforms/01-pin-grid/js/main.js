@@ -2,15 +2,14 @@
  * main.js
  * Entry point — wires Brain, Scene, Identity, and Chat.
  *
- * Loop:
- *   1. Brain.getHeightMap(now) → Float32Array(900)
- *   2. Scene.setTargets(heightMap)
- *   3. Scene.render()
- *   4. HUD uptime updated every second
- *
- * Chat flow:
- *   user types → Chat.send() → /api/chat proxy → Kimi K2.5
- *   → Brain.setGestureFromLLM() + Identity.writeLog()
+ * Streaming chat flow:
+ *   user types
+ *     → Chat.send()
+ *     → onThinking: grid → noise, show "..."
+ *     → onGestureReady: grid switches immediately, live log entry created
+ *     → onToken: live log entry updates character by character
+ *     → onResponse: chat re-enabled
+ *     → onError: recover gracefully
  */
 
 (function () {
@@ -48,6 +47,40 @@
     if (e.key === 'Enter' && !chatInput.disabled) submitChat();
   });
 
+  // ── Live log entry (updates in place as tokens stream in) ─────────────
+
+  let _updateLiveLog = null;
+
+  function _createLiveLogEntry() {
+    const now  = new Date();
+    const mm   = String(now.getMinutes()).padStart(2, '0');
+    const ss   = String(now.getSeconds()).padStart(2, '0');
+
+    const row     = document.createElement('div');
+    row.className = 'log-entry new';
+
+    const time     = document.createElement('span');
+    time.className = 'log-timestamp';
+    time.textContent = `${mm}:${ss}`;
+
+    const msg     = document.createElement('span');
+    msg.className = 'log-msg ai-thought';
+    msg.textContent = '';
+
+    row.appendChild(time);
+    row.appendChild(msg);
+    logEl.appendChild(row);
+    logEl.scrollTop = logEl.scrollHeight;
+
+    setTimeout(() => row.classList.remove('new'), 2000);
+
+    // Returns an updater — call it with the full thought text so far
+    return (text) => {
+      msg.textContent = `"${text}"`;
+      logEl.scrollTop = logEl.scrollHeight;
+    };
+  }
+
   // ── Chat callbacks ────────────────────────────────────────────────────
 
   Chat.onThinking(() => {
@@ -56,21 +89,34 @@
     Identity.writeLog('...', 'ai-thought');
   });
 
-  Chat.onResponse(({ gesture, thought }) => {
+  // Gesture arrives on the model's first line — switch immediately
+  Chat.onGestureReady(gesture => {
     Brain.setGestureFromLLM(gesture);
+    stateEl.textContent = 'RESPONDING';
+    _updateLiveLog = _createLiveLogEntry();
+  });
+
+  // Thought text updates live as tokens arrive
+  Chat.onToken(text => {
+    if (_updateLiveLog) _updateLiveLog(text);
+  });
+
+  // Stream complete — re-enable input
+  Chat.onResponse(() => {
+    _updateLiveLog = null;
     stateEl.textContent = 'LISTENING';
-    Identity.writeLog(`"${thought}"`, 'ai-thought');
     setChatEnabled(true);
   });
 
   Chat.onError(msg => {
+    _updateLiveLog = null;
     Brain.setGestureFromLLM('breathe');
     stateEl.textContent = 'LISTENING';
     Identity.writeLog(`Error: ${msg}`, 'system');
     setChatEnabled(true);
   });
 
-  // Enable chat input once boot sequence fires enable_chat event
+  // Enable chat once the boot sequence fires its enable_chat event
   Brain.onChatEnabled(() => setChatEnabled(true));
 
   // ── Boot ─────────────────────────────────────────────────────────────
