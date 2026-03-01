@@ -6,6 +6,15 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ## [Unreleased]
 
+### Fixed (2026-03-02 — UX Polish)
+- Log timestamps now show session-relative time (00:00 from page load) instead of broken absolute unix time
+- Camera starts frontal (0, 38, 68) — inFORM-style face-on view — then begins slow auto-rotate after 5s
+- SOUL.md accordion opens by default; the core writing was hidden on first visit
+- Removed GROQ/GEMINI/OLLAMA provider badge from chat UI — broke the lifeform fiction
+- Thinking state now shows a blinking `▋` cursor instead of static `'...'`
+- `MOTION: still` now logs `— holding still —` so the flat grid reads as intentional, not broken
+- Mobile layout: canvas 55vh + panel 45vh stacked vertically on screens ≤640px
+
 ### Added (2026-03-01 — Making It Genuinely Alive)
 - Heartbeat loop: FORM speaks proactively after 45s idle; cycles through reflect/explore/feel_news/scan_self types
 - `api/news.js`: pulls a random BBC RSS headline (no API key); used by feel_news heartbeat

@@ -11,6 +11,7 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 ## [Unreleased]
 
 - Add best practices: expand CLAUDE.md with 8 architecture/API/LLM/rules sections, add .claude/ settings and slash commands
+- UX polish: fix log timestamps, open SOUL.md by default, remove provider badge, frontal camera start, mobile layout, thinking cursor, stillness cue
 
 ### Added
 - **Session memory (Phase 1)** — FORM now remembers what it thought in past sessions. `api/session.js` stores last 5 sessions (thoughts + exchange count) in KV. `identity.js` collects thoughts during a session, saves on page unload via `sendBeacon`, and auto-saves every 5 exchanges. Session summaries are injected into the system prompt so FORM can reference its own history. (2026-03-01)
