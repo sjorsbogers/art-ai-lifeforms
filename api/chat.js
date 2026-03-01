@@ -2,7 +2,7 @@
  * api/chat.js
  * Vercel serverless proxy — Gemini first, Groq fallback, then Ollama in browser.
  *
- * Primary:  Gemini 2.0 Flash  (~0.5s, free 1.5k req/day, no card needed)
+ * Primary:  Gemini 1.5 Flash  (~0.5s, free 1.5k req/day, no card needed)
  * Fallback: Groq / Llama 3.3  (~0.2s, free 14k req/day)
  * Last:     Ollama             (local, browser-side only)
  */
@@ -17,7 +17,9 @@ module.exports = async function handler(req, res) {
 
   const { messages } = req.body;
 
-  // -- 1. Try Gemini 2.0 Flash -------------------------------------------
+  // -- 1. Try Gemini 1.5 Flash -------------------------------------------
+  // Uses OpenAI-compatible endpoint. Free tier: 1500 req/day, 15 req/min.
+  // Falls through on 429 (rate limit) or any non-2xx error.
 
   const geminiKey = process.env.GEMINI_API_KEY;
 
@@ -32,7 +34,7 @@ module.exports = async function handler(req, res) {
             'Content-Type':  'application/json',
           },
           body: JSON.stringify({
-            model:       'gemini-2.0-flash',
+            model:       'gemini-1.5-flash',
             messages,
             max_tokens:  180,
             temperature: 0.9,
@@ -40,12 +42,12 @@ module.exports = async function handler(req, res) {
         }
       );
 
-      if (upstream.status !== 429) {
+      if (upstream.ok) {
         const data = await upstream.json();
-        if (data.choices) data._provider = 'GEMINI';
-        return res.status(upstream.status).json(data);
+        data._provider = 'GEMINI';
+        return res.status(200).json(data);
       }
-      // 429 = rate limited — fall through to Groq
+      // Any non-2xx (429, 503, quota errors) — fall through to Groq
     } catch (_) {
       // Network error — fall through to Groq
     }
@@ -56,7 +58,7 @@ module.exports = async function handler(req, res) {
   const groqKey = process.env.GROQ_API_KEY;
 
   if (!groqKey) {
-    return res.status(429).json({ error: 'Gemini rate limited and GROQ_API_KEY not configured' });
+    return res.status(429).json({ error: 'Gemini unavailable and GROQ_API_KEY not configured' });
   }
 
   try {
