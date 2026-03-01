@@ -301,7 +301,11 @@ Hey — ask me to show you a heart, or type something and I'll spell it on the g
       }
       if (res.status !== 429) throw new Error(`HTTP ${res.status}`);
       // 429 = Gemini + Groq both exhausted — fall through to Ollama
-      console.log('[FORM] Cloud APIs rate limited — trying Ollama');
+      try {
+        const errData = await res.json();
+        console.warn('[FORM] Cloud APIs unavailable:', errData.errors || errData.error);
+      } catch (_) {}
+      console.log('[FORM] Trying Ollama fallback...');
     } catch (err) {
       if (!err.message.includes('429')) throw err;
     }
@@ -381,9 +385,10 @@ Hey — ask me to show you a heart, or type something and I'll spell it on the g
       }
 
       const systemPrompt = _buildSystemPrompt();
+      // Keep last 8 messages (4 exchanges) — prevents token bloat that triggers Groq TPM limits
       const raw = await _callLLM([
         { role: 'system', content: systemPrompt },
-        ..._history,
+        ..._history.slice(-8),
       ]);
 
       const parsed = _parse(raw);

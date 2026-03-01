@@ -17,6 +17,8 @@ module.exports = async function handler(req, res) {
 
   const { messages } = req.body;
 
+  const errors = {};
+
   // -- 1. Try Groq -------------------------------------------------------
 
   const groqKey = process.env.GROQ_API_KEY;
@@ -41,8 +43,18 @@ module.exports = async function handler(req, res) {
         const data = await upstream.json();
         return res.status(200).json(data);
       }
-      // Non-2xx (429 etc.) — fall through to Gemini
-    } catch (_) { /* fall through */ }
+      // Non-2xx — capture the reason and fall through to Gemini
+      try {
+        const errBody = await upstream.json();
+        errors.groq = `HTTP ${upstream.status}: ${errBody?.error?.message || JSON.stringify(errBody)}`;
+      } catch (_) {
+        errors.groq = `HTTP ${upstream.status}`;
+      }
+    } catch (e) {
+      errors.groq = `network: ${e.message}`;
+    }
+  } else {
+    errors.groq = 'no key';
   }
 
   // -- 2. Fallback: Gemini 2.5 Flash (v1beta endpoint) ------------------
@@ -73,9 +85,19 @@ module.exports = async function handler(req, res) {
         data._provider = 'GEMINI';
         return res.status(200).json(data);
       }
-    } catch (_) { /* fall through */ }
+      try {
+        const errBody = await upstream.json();
+        errors.gemini = `HTTP ${upstream.status}: ${errBody?.error?.message || JSON.stringify(errBody)}`;
+      } catch (_) {
+        errors.gemini = `HTTP ${upstream.status}`;
+      }
+    } catch (e) {
+      errors.gemini = `network: ${e.message}`;
+    }
+  } else {
+    errors.gemini = 'no key';
   }
 
-  // Both failed — browser will try Ollama
-  return res.status(429).json({ error: 'Groq and Gemini both unavailable' });
+  // Both failed — browser will try Ollama; include reason for diagnostics
+  return res.status(429).json({ error: 'Groq and Gemini both unavailable', errors });
 };
