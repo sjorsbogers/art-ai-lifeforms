@@ -16,6 +16,9 @@ const Identity = (() => {
 
   let _emotionalHistory = [];   // last 20 { emotion, params, context }
   let _savedGestures    = {};   // name → { motion, frequency, ... }
+  let _sessionThoughts  = [];   // FORM thoughts collected this session
+  let _sessionExchanges = 0;    // user message count this session
+  let _sessionSummaries = [];   // last 5 sessions loaded from KV
 
   const log = [];   // { ts: ms, msg: string, type: string }
 
@@ -55,6 +58,57 @@ const Identity = (() => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ gestures: { [name]: params } }),
       });
+    } catch (_) { /* silently skip */ }
+  }
+
+  // ── Session memory ──────────────────────────────────────────────────────
+
+  function addSessionThought(thought) {
+    if (!thought || thought === '...') return;
+    _sessionThoughts.push(thought.slice(0, 120));
+    _sessionExchanges++;
+    // Auto-save every 5 exchanges so data isn't lost if tab closes
+    if (_sessionExchanges % 5 === 0) _saveSession();
+  }
+
+  function _saveSession() {
+    if (_sessionThoughts.length === 0) return;
+    const body = JSON.stringify({
+      thoughts:  _sessionThoughts,
+      exchanges: _sessionExchanges,
+    });
+    // sendBeacon works reliably on page unload; fetch as primary
+    try {
+      navigator.sendBeacon('/api/session', new Blob([body], { type: 'application/json' }));
+    } catch (_) {
+      fetch('/api/session', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body,
+      }).catch(() => {});
+    }
+  }
+
+  function getSessionContext() {
+    if (_sessionSummaries.length === 0) return '';
+    const lines = ['Your memory of past sessions:'];
+    for (const s of _sessionSummaries.slice(0, 3)) {
+      const preview = s.thoughts.slice(0, 3).map(t => `"${t}"`).join(' / ');
+      lines.push(`  [${s.date}] ${s.exchanges} exchange(s) — ${preview}`);
+    }
+    return lines.join('\n');
+  }
+
+  async function _loadSessionSummaries() {
+    try {
+      const res = await fetch('/api/session');
+      if (res.ok) {
+        const { sessions } = await res.json();
+        if (Array.isArray(sessions) && sessions.length > 0) {
+          _sessionSummaries = sessions;
+          writeLog(`Session memory: ${sessions.length} past session(s) loaded.`, 'gesture-learned');
+        }
+      }
     } catch (_) { /* silently skip */ }
   }
 
@@ -273,8 +327,12 @@ const Identity = (() => {
     writeLog('Grid: 60×60 = 3600 actuating pins', 'system');
     writeLog('Protocol: AWAITING FIRST THOUGHT', 'system');
 
-    // Load persisted state from KV (fire-and-forget — loads before user can type)
+    // Load persisted state + session summaries from KV
     _loadPersistedState();
+    _loadSessionSummaries();
+
+    // Save session on tab close
+    window.addEventListener('beforeunload', _saveSession);
   }
 
   const IDENTITY_DEFAULTS = {
@@ -364,6 +422,8 @@ const Identity = (() => {
     setIdentity,
     setSoul,
     addEmotionalEntry,
+    addSessionThought,
+    getSessionContext,
     saveGesture,
     getSavedGestures,
     getSystemContext,

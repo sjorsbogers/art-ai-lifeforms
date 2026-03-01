@@ -111,10 +111,11 @@
       });
     }
 
-    // 7 -- Log thought
+    // 7 -- Log thought + record in session memory
     stateEl.textContent = 'LISTENING';
     if (thought) {
       Identity.writeLog(`"${thought}"`, 'ai-thought');
+      Identity.addSessionThought(thought);
     }
 
     setChatEnabled(true);

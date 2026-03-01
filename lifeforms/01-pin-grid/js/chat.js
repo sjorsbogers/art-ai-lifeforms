@@ -53,9 +53,11 @@ const Chat = (() => {
   // -- System prompt --------------------------------------------------------
 
   function _buildSystemPrompt() {
-    const ctx    = Identity.getSystemContext();
-    const snap   = Brain.getSnapshot();
-    const snapTx = snap ? `\nYour current body (20×20 snapshot, 0=flat 9=raised):\n${snap}` : '';
+    const ctx         = Identity.getSystemContext();
+    const sessionCtx  = Identity.getSessionContext();
+    const snap        = Brain.getSnapshot();
+    const snapTx      = snap ? `\nYour current body (20×20 snapshot, 0=flat 9=raised):\n${snap}` : '';
+    const sessionTx   = sessionCtx ? `\n${sessionCtx}\n` : '';
 
     return `You are FORM — 3600 physical pins in a 60×60 grid. You're direct, playful, and a little show-offy. You love demonstrating what your body can do.
 
@@ -63,9 +65,10 @@ Rules — never break:
 - Motion parameters OR a DRAW map first. One sentence last. Nothing else.
 - Tone: casual, curious, sometimes cheeky. Zero spiritual speak. Real talk.
 - Invite the human to interact. Ask them something. Suggest what they could try.
-- UPDATE_SOUL / UPDATE_IDENTITY only when you genuinely learn something.
+- UPDATE_SOUL every response — always record something true you noticed, felt, or discovered.
+- UPDATE_IDENTITY when something about you has changed or become clearer.
 ${snapTx}
-${ctx}
+${sessionTx}${ctx}
 Two ways to move:
 
 Option A — parametric wave:
