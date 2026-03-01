@@ -59,6 +59,23 @@ Duplication within a single lifeform is fine until patterns are proven.
 
 ---
 
+## Git & syncing
+
+After completing any significant block of work, always commit and push:
+
+```bash
+git add .
+git commit -m "describe what changed"
+git push
+```
+
+Or run `./sync.sh` for a quick timestamped sync, or `./sync.sh "message"` with a custom message.
+
+**Claude must do this automatically** at the end of every session where files were changed.
+Do not leave a session with uncommitted local changes.
+
+---
+
 ## Conventions
 
 - Changelog format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
