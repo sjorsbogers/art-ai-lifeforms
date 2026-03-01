@@ -368,6 +368,33 @@ html, body {
   color: var(--text-dim);
 }
 
+.log-msg.thinking::after {
+  content: '▋';
+  animation: blink 1s step-end infinite;
+  color: var(--accent);
+}
+
+/* ── Mobile ──────────────────────────────────── */
+
+@media (max-width: 640px) {
+  #app {
+    flex-direction: column;
+  }
+
+  #canvas-container {
+    height: 55vh;
+    width: 100%;
+  }
+
+  #panel {
+    width: 100%;
+    min-width: 0;
+    height: 45vh;
+    border-left: none;
+    border-top: 1px solid var(--border);
+  }
+}
+
 /* ── Animations ──────────────────────────────── */
 
 @keyframes fadeIn {

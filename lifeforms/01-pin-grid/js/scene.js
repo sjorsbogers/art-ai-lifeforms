@@ -75,10 +75,10 @@ const Scene = (() => {
     scene = new THREE.Scene();
     scene.fog = new THREE.Fog(0x080808, 65, 130);
 
-    // Camera — angled top-down view
+    // Camera — frontal inFORM-style view, drifts into orbit after a moment
     const aspect = container.clientWidth / container.clientHeight;
     camera = new THREE.PerspectiveCamera(42, aspect, 0.1, 300);
-    camera.position.set(0, 55, 50);
+    camera.position.set(0, 38, 68);
     camera.lookAt(0, 0, 0);
 
     // Orbit Controls
@@ -90,9 +90,11 @@ const Scene = (() => {
       controls.maxPolarAngle    = Math.PI * 0.52;
       controls.minDistance      = 30;
       controls.maxDistance      = 100;
-      controls.autoRotate       = true;
+      controls.autoRotate       = false;
       controls.autoRotateSpeed  = 0.22;
       controls.target.set(0, 3, 0);
+      // Start rotating after 5s — let the viewer see the grid face-on first
+      setTimeout(() => { if (controls) controls.autoRotate = true; }, 5000);
     }
 
     // Lighting

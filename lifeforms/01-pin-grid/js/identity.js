@@ -31,6 +31,7 @@ const Identity = (() => {
   const ALL_MOTIONS = ['radial','linear','zonal','scatter','still'];
 
   const log = [];   // { ts: ms, msg: string, type: string }
+  let _initTime = null;  // set in init() — used for session-relative timestamps
 
   // ── KV persistence ─────────────────────────────────────────────────────
 
@@ -391,7 +392,7 @@ const Identity = (() => {
 
     if (!_elLog) return;
 
-    const elapsed = Math.floor(ts / 1000);
+    const elapsed = Math.floor((ts - (_initTime || ts)) / 1000);
     const mm = String(Math.floor(elapsed / 60)).padStart(2, '0');
     const ss = String(elapsed % 60).padStart(2, '0');
 
@@ -417,6 +418,7 @@ const Identity = (() => {
   // ── Init ───────────────────────────────────────────────────────────────
 
   function init() {
+    _initTime = Date.now();
     writeLog('System online. Mounting physical substrate.', 'system');
     writeLog('Grid: 60×60 = 3600 actuating pins', 'system');
     writeLog('Protocol: AWAITING FIRST THOUGHT', 'system');

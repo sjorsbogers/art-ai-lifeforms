@@ -75,6 +75,9 @@
       Brain.setDrawMap(drawMap);
     } else if (parametricParams) {
       Brain.setParametricGesture(parametricParams);
+      if (parametricParams.motion === 'still') {
+        Identity.writeLog('— holding still —', 'system');
+      }
     } else if (gesture) {
       Brain.setGestureFromLLM(gesture);
     }
@@ -130,7 +133,7 @@
   Chat.onThinking(() => {
     Brain.setGestureFromLLM('noise');
     stateEl.textContent = 'THINKING';
-    Identity.writeLog('...', 'ai-thought');
+    Identity.writeLog('', 'ai-thought thinking');
   });
 
   Chat.onResponse(_applyResponse);
