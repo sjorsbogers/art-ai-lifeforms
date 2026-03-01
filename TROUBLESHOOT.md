@@ -151,6 +151,76 @@ Tied to CHANGELOG.md for context on what was being built at each stage.
 
 ---
 
+---
+
+## Session: 2026-03-01 — FORM Learning & Evolution (Phase 1–3)
+
+### Issue 12 — Gemini 2.0 Flash free tier has quota = 0
+
+**Symptom:** Adding Gemini as fallback returned 429 immediately with `"limit": 0` in the error body — even on a fresh API key with zero usage.
+
+**Root cause:** Google AI Studio's `gemini-2.0-flash` free tier quota is literally 0 requests on the OpenAI-compatible endpoint (`v1beta/openai/`). The tier exists but has no free allowance.
+
+**Fix:** Tried `gemini-1.5-flash` next → 404 (deprecated on that endpoint). Final fix: use `gemini-2.5-flash` which has a legitimate free tier on the same `v1beta/openai/` endpoint.
+
+**Files:** `api/chat.js`
+
+---
+
+### Issue 13 — Gemini env var not picked up after adding it in Vercel dashboard
+
+**Symptom:** Even after adding `GEMINI_API_KEY` to Vercel env vars, the deployed function still returned "key not found".
+
+**Root cause:** Vercel only injects new env vars into functions on the next deploy. Already-running serverless functions don't pick up dashboard changes.
+
+**Fix:** Push any code change (even a whitespace edit) to trigger a new deploy. Env vars were available immediately after the redeploy.
+
+---
+
+### Issue 14 — LLM provider order confusion (Ollama-first vs Groq-first)
+
+**Symptom:** Deployed Vercel app showed "OLLAMA" provider badge — but Ollama is a local service, not available on Vercel. The fallback chain was wrong.
+
+**Root cause:** The Ollama-first ordering was designed for local development. On Vercel, Ollama always times out (not running), wasting 2.5s on every request before falling back to Groq.
+
+**Fix:** Reordered fallback chain: Groq primary → Gemini 2.5 Flash fallback → Ollama last resort. Added explicit provider badge (`GROQ` / `GEMINI` / `OLLAMA`) in the UI response header.
+
+**Files:** `api/chat.js`, `lifeforms/01-pin-grid/js/chat.js`
+
+---
+
+### Issue 15 — FORM has no memory between sessions
+
+**Symptom:** Every new browser session started fresh. FORM had no recall of what it had explored, felt, or discovered in previous visits.
+
+**Root cause:** Session state lived only in JS variables. No persistence between page loads.
+
+**Fix (Phase 1 — Session Memory):**
+- `api/session.js` — new Vercel function. `POST` saves `{ thoughts, exchanges }` to KV key `form:sessions`. `GET` returns last 5 sessions.
+- `identity.js` — collects thoughts during session in `_sessionThoughts[]`. Saves on `beforeunload` via `sendBeacon`, plus auto-save every 5 exchanges. `getSessionContext()` returns a formatted block injected into the system prompt.
+- Result: FORM can reference what it was thinking yesterday, last week, etc.
+
+**Files:** `api/session.js` (new), `lifeforms/01-pin-grid/js/identity.js`, `lifeforms/01-pin-grid/js/chat.js`
+
+---
+
+### Issue 16 — FORM defaults to `radial` for every motion, never explores its vocabulary
+
+**Symptom:** FORM almost exclusively used `radial` motion regardless of context. The 60×60 grid's full vocabulary (crater, pillar, spine, turbulence, etc.) was never used.
+
+**Root cause:** No feedback loop. FORM had no awareness of which shapes it had used and which it hadn't. The system prompt didn't discourage repetition.
+
+**Fix (Phase 2 — Body Self-Discovery + Phase 3 — Aesthetic Vocabulary):**
+- `api/body.js` — new Vercel function. Tracks `{ name: { count, emotions } }` per shape/motion. KV key `form:body_usage`.
+- `identity.js` — `recordBodyUse(name, emotion)` fires on every response. `getBodyContext()` returns a formatted string listing tried shapes (with counts and emotion associations), flags over-used ones with ⚠, and lists never-tried shapes. `getUntriedShapes()` returns the list for heartbeat injection.
+- `chat.js` — new `explore_body` heartbeat type: picks 3 random untried shapes and asks FORM to try one. System prompt injects body context + aesthetic prompts. `UPDATE_SOUL` is now mandatory every response.
+- Heartbeat rotation updated to `[reflect, explore_body, feel_news, scan_self, explore, explore_body]` for more frequent exploration.
+- Result: FORM gradually works through its full vocabulary, records emotional associations, and builds a personal aesthetic over time.
+
+**Files:** `api/body.js` (new), `lifeforms/01-pin-grid/js/identity.js`, `lifeforms/01-pin-grid/js/chat.js`, `lifeforms/01-pin-grid/js/main.js`
+
+---
+
 ## Quick reference: running FORM
 
 ### Browser (Vercel deployment)

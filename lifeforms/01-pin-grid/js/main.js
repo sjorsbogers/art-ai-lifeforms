@@ -118,6 +118,10 @@
       Identity.addSessionThought(thought);
     }
 
+    // 8 -- Record body usage for self-discovery tracking
+    const usedName = shape || (parametricParams && parametricParams.motion) || gesture;
+    if (usedName) Identity.recordBodyUse(usedName, emotion);
+
     setChatEnabled(true);
   }
 
@@ -164,7 +168,7 @@
   const HEARTBEAT_INTERVAL = 160000; // 2m40s idle before spontaneous thought
   const HEARTBEAT_CHECK    = 10000;  // check every 10s
 
-  const _heartbeatTypes = ['reflect', 'explore', 'feel_news', 'scan_self'];
+  const _heartbeatTypes = ['reflect', 'explore_body', 'feel_news', 'scan_self', 'explore', 'explore_body'];
   let _heartbeatIndex = 0;
 
   function _nextHeartbeatType() {
