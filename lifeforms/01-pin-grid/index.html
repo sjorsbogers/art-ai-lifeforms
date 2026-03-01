@@ -30,28 +30,7 @@
     <!-- Identity Panel -->
     <div id="panel">
 
-      <!-- Top section (identity + soul) — drag handle below to resize -->
-      <div id="panel-top">
-        <div class="panel-block">
-          <div class="panel-block-title">IDENTITY.md</div>
-          <pre id="identity-content" class="panel-pre"></pre>
-        </div>
-
-        <div class="panel-block">
-          <div class="panel-block-title">SOUL.md</div>
-          <pre id="soul-content" class="panel-pre"></pre>
-        </div>
-      </div>
-
-      <!-- Drag handle -->
-      <div id="panel-resizer" title="drag to resize"></div>
-
-      <div class="panel-block panel-log-block">
-        <div class="panel-block-title">LOG</div>
-        <div id="log-content"></div>
-      </div>
-
-      <!-- Chat input -->
+      <!-- Chat input — fixed at top -->
       <div id="chat-block">
         <input
           type="text"
@@ -62,6 +41,28 @@
           spellcheck="false"
         />
         <button id="chat-send" disabled>→</button>
+      </div>
+
+      <!-- Log — scrollable, below chat -->
+      <div class="panel-block panel-log-block">
+        <div class="panel-block-title">LOG</div>
+        <div id="log-content"></div>
+      </div>
+
+      <!-- Drag handle -->
+      <div id="panel-resizer" title="drag to resize"></div>
+
+      <!-- Identity + Soul — scrollable bottom section -->
+      <div id="panel-bottom">
+        <div class="panel-block">
+          <div class="panel-block-title">IDENTITY.md</div>
+          <pre id="identity-content" class="panel-pre"></pre>
+        </div>
+
+        <div class="panel-block">
+          <div class="panel-block-title">SOUL.md</div>
+          <pre id="soul-content" class="panel-pre"></pre>
+        </div>
       </div>
 
     </div>

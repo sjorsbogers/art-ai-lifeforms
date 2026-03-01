@@ -24,7 +24,7 @@
   // -- Panel resize ---------------------------------------------------------
 
   const panelResizer = document.getElementById('panel-resizer');
-  const panelTop     = document.getElementById('panel-top');
+  const panelBottom  = document.getElementById('panel-bottom');
 
   let _resizing = false;
   let _resizeStartY = 0;
@@ -33,7 +33,7 @@
   panelResizer.addEventListener('mousedown', e => {
     _resizing = true;
     _resizeStartY = e.clientY;
-    _resizeStartH = panelTop.offsetHeight;
+    _resizeStartH = panelBottom.offsetHeight;
     panelResizer.classList.add('dragging');
     document.body.style.cursor = 'ns-resize';
     document.body.style.userSelect = 'none';
@@ -42,10 +42,11 @@
 
   document.addEventListener('mousemove', e => {
     if (!_resizing) return;
-    const dy  = e.clientY - _resizeStartY;
+    // Dragging up = bigger identity panel, dragging down = smaller
+    const dy  = _resizeStartY - e.clientY;
     const min = 60;
     const max = window.innerHeight - 220;
-    panelTop.style.height = Math.max(min, Math.min(_resizeStartH + dy, max)) + 'px';
+    panelBottom.style.height = Math.max(min, Math.min(_resizeStartH + dy, max)) + 'px';
   });
 
   document.addEventListener('mouseup', () => {

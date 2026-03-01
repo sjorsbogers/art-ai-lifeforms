@@ -1,9 +1,9 @@
 /**
  * chat.js
- * LLM conversation — tries local Ollama first, falls back to Groq via /api/chat.
+ * LLM conversation — Groq first (fast, 70B), Ollama fallback (local, unlimited).
  *
- * Primary:  http://localhost:11434  (Ollama, free, unlimited, no API key)
- * Fallback: /api/chat               (Groq / Llama 3.3 70B, free tier)
+ * Primary:  /api/chat               (Groq / Llama 3.3 70B — ~0.2s, free tier)
+ * Fallback: http://localhost:11434  (Ollama / mistral — ~3s, no rate limits)
  *
  * Response format:
  *   MOTION: radial|linear|zonal|scatter|still   (preferred)
@@ -280,39 +280,41 @@ Hey — ask me to show you a heart, or type something and I'll spell it on the g
   }
 
   async function _callLLM(messages) {
-    // 1. Quick availability check, then inference with no timeout (Ollama can be slow)
-    const ollamaOk = await _isOllamaAvailable();
-    console.log('[FORM] Using:', ollamaOk ? 'Ollama (local)' : 'Groq (cloud)');
-    _setProvider(ollamaOk ? 'OLLAMA' : 'GROQ');
+    // 1. Try Groq first — fast (~0.2s), high quality (70B)
+    try {
+      const res = await fetch('/api/chat', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages }),
+      });
+      if (res.ok) {
+        _setProvider('GROQ');
+        const data = await res.json();
+        return data.choices?.[0]?.message?.content ?? '';
+      }
+      if (res.status !== 429) throw new Error(`HTTP ${res.status}`);
+      // 429 = rate limited — fall through to Ollama
+      console.log('[FORM] Groq rate limited — trying Ollama');
+    } catch (err) {
+      if (!err.message.includes('429')) throw err;
+    }
 
+    // 2. Fallback: local Ollama — free, no rate limits, slower (~3s)
+    const ollamaOk = await _isOllamaAvailable();
     if (ollamaOk) {
-      try {
-        const res = await fetch(OLLAMA_URL, {
-          method:  'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ model: OLLAMA_MODEL, messages, max_tokens: 180 }),
-        });
-        console.log('[FORM] Ollama inference:', res.status);
-        if (res.ok) {
-          const data = await res.json();
-          return data.choices?.[0]?.message?.content ?? '';
-        }
-      } catch (err) {
-        console.log('[FORM] Ollama inference failed:', err.message, '— falling back to Groq');
+      _setProvider('OLLAMA');
+      const res = await fetch(OLLAMA_URL, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: OLLAMA_MODEL, messages, max_tokens: 180 }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        return data.choices?.[0]?.message?.content ?? '';
       }
     }
 
-    // 2. Fall back to Groq via Vercel proxy
-    _setProvider('GROQ');
-    const res = await fetch('/api/chat', {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ messages }),
-    });
-    if (res.status === 429) throw new Error('Rate limited (Groq). Run Ollama locally for unlimited free inference.');
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
-    return data.choices?.[0]?.message?.content ?? '';
+    throw new Error('Both Groq and Ollama unavailable. Check your connection.');
   }
 
   // -- Provider indicator ---------------------------------------------------

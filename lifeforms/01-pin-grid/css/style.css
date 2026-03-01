@@ -111,11 +111,11 @@ html, body {
   overflow: hidden;
 }
 
-/* Top section — identity + soul, vertically scrollable, user-resizable height */
-#panel-top {
+/* Bottom section — identity + soul, vertically scrollable, user-resizable height */
+#panel-bottom {
   overflow-y: auto;
   flex-shrink: 0;
-  height: 280px;    /* default; JS drag changes this */
+  height: 240px;    /* default; JS drag changes this */
   min-height: 60px;
   scrollbar-width: thin;
   scrollbar-color: var(--border) transparent;
@@ -293,11 +293,11 @@ html, body {
   opacity: 0.7;
 }
 
-/* ── Chat input ──────────────────────────────── */
+/* ── Chat input — fixed at top of panel ─────── */
 
 #chat-block {
   display: flex;
-  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
   flex-shrink: 0;
 }
 
