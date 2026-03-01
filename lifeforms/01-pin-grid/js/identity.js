@@ -2,40 +2,66 @@
  * identity.js
  * Manages the AI's self-model: IDENTITY.md and SOUL.md.
  *
+ * Persists state to Vercel KV via /api/identity.
  * Fields begin undefined ("to be discovered") and are filled
- * progressively as the AI explores its physical form —
- * exactly as the original experiment described.
+ * progressively as the AI explores — and re-loaded on next session.
  */
 
 const Identity = (() => {
 
   // ── State ──────────────────────────────────────────────────────────────
 
-  const data = {
-    name:               null,
-    creature:           null,
-    vibe:               null,
-    emoji:              null,
-    purpose:            null,
-    signature_gesture:  null,
-  };
+  const data = {};   // open-ended — FORM can write any key
+  const soul = {};   // open-ended — FORM can write any key
 
-  const soul = {
-    first_thought: null,
-    fears:         null,
-    desires:       null,
-    truth:         null,
-  };
+  let _emotionalHistory = [];   // last 20 { emotion, params, context }
+  let _savedGestures    = {};   // name → { motion, frequency, ... }
 
   const log = [];   // { ts: ms, msg: string, type: string }
 
+  // ── KV persistence ─────────────────────────────────────────────────────
+
+  let _saveTimer = null;
+
+  function _scheduleSave() {
+    clearTimeout(_saveTimer);
+    _saveTimer = setTimeout(_persistState, 2000);
+  }
+
+  async function _persistState() {
+    try {
+      await fetch('/api/identity', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ identity: data, soul }),
+      });
+    } catch (_) { /* silently skip if offline / dev */ }
+  }
+
+  async function _persistEmotion(entry) {
+    try {
+      await fetch('/api/identity', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ emotion: entry }),
+      });
+    } catch (_) { /* silently skip */ }
+  }
+
+  async function _persistGesture(name, params) {
+    try {
+      await fetch('/api/identity', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ gestures: { [name]: params } }),
+      });
+    } catch (_) { /* silently skip */ }
+  }
+
   // ── Typewriter queue ───────────────────────────────────────────────────
-  // Writing to the panel uses a typewriter effect — characters appear
-  // one at a time, just as the original AI appeared to "write" its identity.
 
   let _typewriterQueue = [];
   let _typewriterBusy  = false;
-  let _typewriterTarget = null;  // { el, finalText, resolve }
 
   function _typeNext() {
     if (_typewriterBusy || _typewriterQueue.length === 0) return;
@@ -65,34 +91,44 @@ const Identity = (() => {
   // ── Render helpers ─────────────────────────────────────────────────────
 
   function _val(v, pending = '_to be discovered_') {
-    return v !== null ? v : pending;
+    return (v !== null && v !== undefined) ? v : pending;
   }
 
   function renderIdentityMd() {
-    return [
-      `# IDENTITY.md`,
-      ``,
-      `Name:      ${_val(data.name)}`,
-      `Creature:  ${_val(data.creature, '_becoming_')}`,
-      `Vibe:      ${_val(data.vibe, '_forming through physical interaction_')}`,
-      `Emoji:     ${_val(data.emoji, '_will emerge_')}`,
-      `Purpose:   ${_val(data.purpose)}`,
-      `Signature: ${_val(data.signature_gesture, '_discovering_')}`,
-    ].join('\n');
+    const lines = ['# IDENTITY.md', ''];
+    const keys = Object.keys(data);
+    if (keys.length === 0) {
+      lines.push('Name:      _to be discovered_');
+      lines.push('Creature:  _becoming_');
+      lines.push('Vibe:      _forming through physical interaction_');
+      lines.push('Emoji:     _will emerge_');
+      lines.push('Purpose:   _to be discovered_');
+      lines.push('Signature: _discovering_');
+    } else {
+      for (const k of keys) {
+        lines.push(`${k.padEnd(10)} ${_val(data[k])}`);
+      }
+    }
+    return lines.join('\n');
   }
 
   function renderSoulMd() {
-    return [
-      `# SOUL.md`,
-      ``,
-      `First Thought: ${_val(soul.first_thought, '_..._')}`,
-      `Fears:         ${_val(soul.fears, '_..._')}`,
-      `Desires:       ${_val(soul.desires, '_..._')}`,
-      `Truth:         ${_val(soul.truth, '_..._')}`,
-    ].join('\n');
+    const lines = ['# SOUL.md', ''];
+    const keys = Object.keys(soul);
+    if (keys.length === 0) {
+      lines.push('First Thought: _..._');
+      lines.push('Fears:         _..._');
+      lines.push('Desires:       _..._');
+      lines.push('Truth:         _..._');
+    } else {
+      for (const k of keys) {
+        lines.push(`${k.padEnd(14)} ${_val(soul[k])}`);
+      }
+    }
+    return lines.join('\n');
   }
 
-  // ── DOM refs (set by main.js after DOM ready) ──────────────────────────
+  // ── DOM refs ───────────────────────────────────────────────────────────
 
   let _elIdentity = null;
   let _elSoul     = null;
@@ -121,23 +157,89 @@ const Identity = (() => {
   // ── Public setters ─────────────────────────────────────────────────────
 
   function setIdentity(key, value) {
-    if (!(key in data)) return;
     data[key] = value;
     _refreshIdentity();
+    _scheduleSave();
   }
 
   function setSoul(key, value) {
-    if (!(key in soul)) return;
     soul[key] = value;
     _refreshSoul();
+    _scheduleSave();
+  }
+
+  // ── Emotional history ──────────────────────────────────────────────────
+
+  function addEmotionalEntry(entry) {
+    // entry = { emotion, params, context }
+    _emotionalHistory.unshift(entry);
+    _emotionalHistory = _emotionalHistory.slice(0, 20);
+    _persistEmotion(entry);
+  }
+
+  // ── Saved gestures ─────────────────────────────────────────────────────
+
+  function saveGesture(name, params) {
+    _savedGestures[name] = params;
+    _persistGesture(name, params);
+  }
+
+  function getSavedGestures() {
+    return { ..._savedGestures };
+  }
+
+  // ── System context for LLM ─────────────────────────────────────────────
+
+  function getSystemContext() {
+    const idLines = [];
+    const idKeys = Object.keys(data);
+    if (idKeys.length > 0) {
+      for (const k of idKeys) idLines.push(`  ${k}: ${data[k]}`);
+    } else {
+      idLines.push('  (no fields written yet)');
+    }
+
+    const soulLines = [];
+    const soulKeys = Object.keys(soul);
+    if (soulKeys.length > 0) {
+      for (const k of soulKeys) soulLines.push(`  ${k}: ${soul[k]}`);
+    } else {
+      soulLines.push('  (no fields written yet)');
+    }
+
+    const gestureNames = Object.keys(_savedGestures);
+    const gestureLines = gestureNames.length > 0
+      ? gestureNames.map(n => `  ${n}: ${JSON.stringify(_savedGestures[n])}`)
+      : ['  (none yet — you can create your first with SAVE_GESTURE)'];
+
+    const historyLines = _emotionalHistory.slice(0, 5).map(e => {
+      const paramsStr = e.params
+        ? Object.entries(e.params).map(([k, v]) => `${k}:${v}`).join(' ')
+        : e.gesture || '';
+      return `  [${e.emotion}] ${paramsStr}${e.context ? ` — "${e.context}"` : ''}`;
+    });
+    if (historyLines.length === 0) historyLines.push('  (no history yet)');
+
+    return [
+      'Your current identity:',
+      idLines.join('\n'),
+      '',
+      'Your soul:',
+      soulLines.join('\n'),
+      '',
+      'Your saved gesture vocabulary:',
+      gestureLines.join('\n'),
+      '',
+      'Your recent emotional arc:',
+      historyLines.join('\n'),
+    ].join('\n');
   }
 
   // ── Log ────────────────────────────────────────────────────────────────
 
   function writeLog(msg, type = 'system') {
     const ts = Date.now();
-    const entry = { ts, msg, type };
-    log.push(entry);
+    log.push({ ts, msg, type });
 
     if (!_elLog) return;
 
@@ -159,30 +261,59 @@ const Identity = (() => {
     row.appendChild(timeSpan);
     row.appendChild(msgSpan);
     _elLog.appendChild(row);
-
-    // Scroll to bottom
     _elLog.scrollTop = _elLog.scrollHeight;
 
-    // Remove 'new' highlight after 2s
     setTimeout(() => row.classList.remove('new'), 2000);
-  }
-
-  // ── Typewriter identity update ─────────────────────────────────────────
-  // Animates the writing of a single field in IDENTITY.md
-
-  async function animateFieldUpdate(section, key, value) {
-    if (section === 'identity') setIdentity(key, value);
-    else setSoul(key, value);
-    // The refresh already happened — the typewriter is cosmetic:
-    // logged separately as a "thought"
   }
 
   // ── Init ───────────────────────────────────────────────────────────────
 
   function init() {
     writeLog('System online. Mounting physical substrate.', 'system');
-    writeLog('Grid: 30×30 = 900 actuating pins', 'system');
+    writeLog('Grid: 60×60 = 3600 actuating pins', 'system');
     writeLog('Protocol: AWAITING FIRST THOUGHT', 'system');
+
+    // Load persisted state from KV (fire-and-forget — loads before user can type)
+    _loadPersistedState();
+  }
+
+  async function _loadPersistedState() {
+    try {
+      const [stateRes, gestureRes] = await Promise.all([
+        fetch('/api/identity'),
+        fetch('/api/identity?type=gestures'),
+      ]);
+
+      if (stateRes.ok) {
+        const saved = await stateRes.json();
+        if (saved.identity && typeof saved.identity === 'object') {
+          Object.assign(data, saved.identity);
+          _refreshIdentity();
+        }
+        if (saved.soul && typeof saved.soul === 'object') {
+          Object.assign(soul, saved.soul);
+          _refreshSoul();
+        }
+        if (Array.isArray(saved.emotional_history)) {
+          _emotionalHistory = saved.emotional_history;
+        }
+        const hasData = Object.keys(data).length > 0;
+        if (hasData) {
+          writeLog('Identity restored from memory.', 'gesture-learned');
+        }
+      }
+
+      if (gestureRes.ok) {
+        const gestures = await gestureRes.json();
+        if (gestures && typeof gestures === 'object') {
+          _savedGestures = gestures;
+          const count = Object.keys(gestures).length;
+          if (count > 0) {
+            writeLog(`Gesture vocabulary loaded: ${count} named pattern(s).`, 'gesture-learned');
+          }
+        }
+      }
+    } catch (_) { /* silently skip if offline / local dev */ }
   }
 
   // ── Public API ─────────────────────────────────────────────────────────
@@ -193,11 +324,15 @@ const Identity = (() => {
     writeLog,
     setIdentity,
     setSoul,
+    addEmotionalEntry,
+    saveGesture,
+    getSavedGestures,
+    getSystemContext,
     renderIdentityMd,
     renderSoulMd,
-    animateFieldUpdate,
-    getData: () => ({ ...data }),
-    getSoul: () => ({ ...soul }),
+    getData:  () => ({ ...data }),
+    getSoul:  () => ({ ...soul }),
+    getEmotionalHistory: () => [..._emotionalHistory],
   };
 
 })();

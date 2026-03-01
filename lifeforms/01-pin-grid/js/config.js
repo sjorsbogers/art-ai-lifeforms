@@ -1,15 +1,14 @@
 /**
  * config.js
  * Global constants for the AI Lifeform pin grid.
- * Mirrors the physical inFORM/neoFORM display:
- *   30 × 30 = 900 actuating pins
+ *   60 × 60 = 3600 actuating pins
  */
 
 const CONFIG = Object.freeze({
-  // Grid dimensions (matches physical inFORM)
-  GRID_COLS:      30,
-  GRID_ROWS:      30,
-  TOTAL_PINS:     900,   // 30 × 30
+  // Grid dimensions
+  GRID_COLS:      60,
+  GRID_ROWS:      60,
+  TOTAL_PINS:     3600,  // 60 × 60
 
   // Pin geometry
   PIN_WIDTH:      0.72,  // world units

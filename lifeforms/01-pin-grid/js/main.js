@@ -1,10 +1,11 @@
 /**
  * main.js
- * Entry point — wires Brain, Scene, Identity, and Chat.
+ * Entry point — wires Brain, Scene, Identity, Chat, and Display.
  *
  * Chat flow:
- *   user types → Chat.send() → /api/chat (Groq) → response in ~1-2s
- *   → Brain.setGestureFromLLM() + Identity.writeLog()
+ *   user types → Chat.send() → /api/chat (Groq) → parsed response
+ *   → Brain applies: gesture/parametric → display → emotion
+ *   → Identity applies: identity updates, soul updates, emotional history
  */
 
 (function () {
@@ -50,10 +51,63 @@
     Identity.writeLog('...', 'ai-thought');
   });
 
-  Chat.onResponse(({ gesture, thought }) => {
-    Brain.setGestureFromLLM(gesture);
+  /**
+   * Full response handler.
+   * Applies fields in order: motion → display → emotion
+   *   → identity updates → emotional history → log thought
+   */
+  Chat.onResponse(({
+    gesture, parametricParams,
+    display, emotion,
+    saveGesture,
+    identityUpdates, soulUpdates,
+    thought,
+  }) => {
+    // 1 — Motion
+    if (parametricParams) {
+      Brain.setParametricGesture(parametricParams);
+    } else if (gesture) {
+      Brain.setGestureFromLLM(gesture);
+    }
+
+    // 2 — Display (visual overlay)
+    if (display) {
+      Brain.setDisplay(display);
+    }
+
+    // 3 — Emotion
+    if (emotion) {
+      Brain.setEmotion(emotion);
+    }
+
+    // 4 — Save custom gesture
+    if (saveGesture && parametricParams) {
+      Brain.saveGesture(saveGesture, parametricParams);
+    }
+
+    // 5 — Identity updates (FORM writes its own IDENTITY.md / SOUL.md)
+    for (const { key, value } of (identityUpdates || [])) {
+      Identity.setIdentity(key, value);
+    }
+    for (const { key, value } of (soulUpdates || [])) {
+      Identity.setSoul(key, value);
+    }
+
+    // 6 — Record emotional history
+    if (emotion && emotion !== 'neutral') {
+      Identity.addEmotionalEntry({
+        emotion,
+        params:  parametricParams || { gesture: gesture || 'reflect' },
+        context: thought.slice(0, 80),
+      });
+    }
+
+    // 7 — Log thought
     stateEl.textContent = 'LISTENING';
-    Identity.writeLog(`"${thought}"`, 'ai-thought');
+    if (thought) {
+      Identity.writeLog(`"${thought}"`, 'ai-thought');
+    }
+
     setChatEnabled(true);
   });
 

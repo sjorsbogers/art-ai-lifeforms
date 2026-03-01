@@ -10,6 +10,8 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ## [Unreleased]
 
+- feat: FORM Expansion — 60×60 grid, parametric gestures, display vocabulary, emotion colors, KV identity persistence, agentive self-authorship (2026-03-01)
+
 - fix: switch from NVIDIA/Kimi to Groq/Llama-3.3-70B — faster, reliable, non-streaming
 
 - feat: enable streaming — Edge runtime proxy, live log entry, gesture fires on first token
