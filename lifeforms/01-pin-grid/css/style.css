@@ -269,6 +269,30 @@ html, body {
   color: var(--green);
 }
 
+/* ── LLM provider badge ──────────────────────── */
+
+#llm-provider {
+  font-size: 8px;
+  letter-spacing: 0.15em;
+  padding: 2px 6px;
+  border-radius: 2px;
+  align-self: center;
+  margin-left: 10px;
+  flex-shrink: 0;
+}
+
+.provider-local {
+  color: var(--green);
+  border: 1px solid var(--green);
+  opacity: 0.7;
+}
+
+.provider-cloud {
+  color: var(--accent-dim);
+  border: 1px solid var(--accent-dim);
+  opacity: 0.7;
+}
+
 /* ── Chat input ──────────────────────────────── */
 
 #chat-block {

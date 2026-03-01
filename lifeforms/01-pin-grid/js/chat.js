@@ -205,34 +205,46 @@ Something is pulling at the edges of my form.`;
   const OLLAMA_URL  = 'http://localhost:11434/v1/chat/completions';
   const OLLAMA_MODEL = 'mistral';
 
-  // Quick ping to check if Ollama is reachable (800ms max — doesn't run inference)
+  // Quick ping to check if Ollama is reachable (2s max — doesn't run inference)
   async function _isOllamaAvailable() {
     try {
       const ctrl = new AbortController();
-      const t = setTimeout(() => ctrl.abort(), 800);
+      const t = setTimeout(() => ctrl.abort(), 2000);
       const res = await fetch(OLLAMA_TAGS, { signal: ctrl.signal });
       clearTimeout(t);
+      console.log('[FORM] Ollama ping:', res.status, res.ok ? 'available' : 'not ok');
       return res.ok;
-    } catch (_) { return false; }
+    } catch (err) {
+      console.log('[FORM] Ollama ping failed:', err.message);
+      return false;
+    }
   }
 
   async function _callLLM(messages) {
     // 1. Quick availability check, then inference with no timeout (Ollama can be slow)
-    if (await _isOllamaAvailable()) {
+    const ollamaOk = await _isOllamaAvailable();
+    console.log('[FORM] Using:', ollamaOk ? 'Ollama (local)' : 'Groq (cloud)');
+    _setProvider(ollamaOk ? 'OLLAMA' : 'GROQ');
+
+    if (ollamaOk) {
       try {
         const res = await fetch(OLLAMA_URL, {
           method:  'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ model: OLLAMA_MODEL, messages, max_tokens: 180 }),
         });
+        console.log('[FORM] Ollama inference:', res.status);
         if (res.ok) {
           const data = await res.json();
           return data.choices?.[0]?.message?.content ?? '';
         }
-      } catch (_) { /* CORS or other — fall through to Groq */ }
+      } catch (err) {
+        console.log('[FORM] Ollama inference failed:', err.message, '— falling back to Groq');
+      }
     }
 
     // 2. Fall back to Groq via Vercel proxy
+    _setProvider('GROQ');
     const res = await fetch('/api/chat', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -242,6 +254,19 @@ Something is pulling at the edges of my form.`;
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     return data.choices?.[0]?.message?.content ?? '';
+  }
+
+  // -- Provider indicator ---------------------------------------------------
+
+  let _providerEl = null;
+  function _setProvider(name) {
+    if (!_providerEl) {
+      _providerEl = document.createElement('div');
+      _providerEl.id = 'llm-provider';
+      document.getElementById('chat-block')?.prepend(_providerEl);
+    }
+    _providerEl.textContent = name;
+    _providerEl.className = name === 'OLLAMA' ? 'provider-local' : 'provider-cloud';
   }
 
   // -- Send -----------------------------------------------------------------
