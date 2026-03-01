@@ -10,6 +10,8 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ## [Unreleased]
 
+- Add best practices: expand CLAUDE.md with 8 architecture/API/LLM/rules sections, add .claude/ settings and slash commands
+
 ### Added
 - **Session memory (Phase 1)** — FORM now remembers what it thought in past sessions. `api/session.js` stores last 5 sessions (thoughts + exchange count) in KV. `identity.js` collects thoughts during a session, saves on page unload via `sendBeacon`, and auto-saves every 5 exchanges. Session summaries are injected into the system prompt so FORM can reference its own history. (2026-03-01)
 - **Body self-discovery (Phase 2)** — FORM tracks which shapes and motions it has used and how many times, and which emotions it associated with them. `api/body.js` stores usage data in KV. `identity.js` exposes `recordBodyUse()`, `getBodyContext()` (injected into every prompt), and `getUntriedShapes()`. New heartbeat type `explore_body` picks 3 untried shapes from the 60×60 vocabulary and asks FORM to use one. (2026-03-01)
