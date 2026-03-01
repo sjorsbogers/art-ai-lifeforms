@@ -10,6 +10,8 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ## [Unreleased]
 
+- chore: sync.sh now auto-updates CHANGELOG.md [Unreleased] on every sync
+
 ### Planned
 - Extract shared pin grid engine to `core/`
 
