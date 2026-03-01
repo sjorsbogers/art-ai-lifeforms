@@ -4,6 +4,7 @@
  *
  * Primary:  Gemini 2.0 Flash  (~0.5s, free 1.5k req/day, no card needed)
  * Fallback: Groq / Llama 3.3  (~0.2s, free 14k req/day)
+ * Last:     Ollama             (local, browser-side only)
  */
 
 module.exports = async function handler(req, res) {
