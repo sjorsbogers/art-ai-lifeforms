@@ -325,13 +325,24 @@ Hey — ask me to show you a heart, or type something and I'll spell it on the g
       }
     }
 
-    throw new Error('Groq, Gemini, and Ollama all unavailable. Check your connection.');
+    throw new Error('All providers unavailable. Check /api/debug for details.');
   }
 
-  // -- Provider indicator (internal only — no DOM badge) -------------------
+  // -- Provider indicator -------------------------------------------------------
 
-  let _currentProvider = null;
-  function _setProvider(name) { _currentProvider = name; }
+  let _providerEl = null;
+  function _setProvider(name) {
+    if (!_providerEl) {
+      _providerEl = document.createElement('div');
+      _providerEl.id = 'llm-provider';
+      document.getElementById('chat-block')?.prepend(_providerEl);
+    }
+    _providerEl.textContent = name.toLowerCase();
+    const cls = name === 'OLLAMA' ? 'provider-local'
+              : name === 'GEMINI' ? 'provider-gemini'
+              : 'provider-cloud';
+    _providerEl.className = cls;
+  }
 
   // -- Intent intercept -----------------------------------------------------
   // Detects simple time/date queries and returns a synthetic response string,
