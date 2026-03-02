@@ -191,6 +191,12 @@ open lifeforms/01-pin-grid/index.html
 #    GEMINI_API_KEY     — aistudio.google.com (free, gemini-2.5-flash fallback)
 #    KV_REST_API_URL    — Vercel Dashboard → Integrations → Upstash → connect
 #    KV_REST_API_TOKEN  — auto-set by Upstash integration
+#
+#    ⚠ IMPORTANT: In the Vercel dashboard, each env var has checkboxes for
+#    "Production", "Preview", and "Development". Check BOTH Production AND Preview
+#    for GROQ_API_KEY, GEMINI_API_KEY, KV_REST_API_URL, and KV_REST_API_TOKEN.
+#    Without this, preview URLs (art-ai-lifeforms-git-*.vercel.app) silently
+#    have no API keys and FORM fails to respond.
 
 # 3. Local Ollama (unlimited, no API key):
 ollama pull mistral

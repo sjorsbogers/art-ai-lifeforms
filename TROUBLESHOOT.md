@@ -221,6 +221,34 @@ Tied to CHANGELOG.md for context on what was being built at each stage.
 
 ---
 
+---
+
+## Session: 2026-03-02 — UX Polish
+
+### Issue 17 — FORM fails on Vercel preview URLs (all providers unavailable)
+
+**Symptom:** Chat returns "All providers unavailable" on URLs like `art-ai-lifeforms-git-main-*.vercel.app` even though Groq works fine on the production URL.
+
+**Root cause:** Vercel env vars are scoped per environment. If `GROQ_API_KEY`, `GEMINI_API_KEY`, `KV_REST_API_URL`, and `KV_REST_API_TOKEN` were only checked for "Production" when added, they're silently absent on preview deployments. `api/chat.js` gets `undefined` for all keys, skips both providers, and returns 429.
+
+**Fix:** In Vercel Dashboard → Settings → Environment Variables, edit each of the four keys and check **both "Production" and "Preview"** checkboxes. Then redeploy. Preview URLs will now behave identically to production.
+
+**Note:** There is no code-level fix for this — it is purely a dashboard setting.
+
+---
+
+### Issue 18 — FORM falls back to Ollama after long conversations (Groq TPM limit)
+
+**Symptom:** Chat works for the first few messages but then falls through to Ollama (slow, lower quality) or fails entirely after several exchanges.
+
+**Root cause:** `_history` in `chat.js` grew unbounded. Each exchange appended the user message + the full raw LLM response (~180 tokens of MOTION/FREQUENCY/etc. markup). After ~6 exchanges, the total tokens per request (system prompt ~700 + history ~1500+) approached or exceeded Groq's 6000 token-per-minute (TPM) free tier limit. Groq returned 429 → Gemini also 429 (daily quota) → server returned 429 → client fell to Ollama.
+
+**Fix:** In `chat.js` `send()`, slice history to last 8 messages before the LLM call: `_history.slice(-8)`. Full history stays in memory for logging; only a rolling window is sent to the API. 4 exchanges of context is sufficient for conversational continuity.
+
+**Files:** `lifeforms/01-pin-grid/js/chat.js`
+
+---
+
 ## Quick reference: running FORM
 
 ### Browser (Vercel deployment)
