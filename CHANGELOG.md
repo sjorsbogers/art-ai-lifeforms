@@ -10,56 +10,68 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ## [Unreleased]
 
-- Add best practices: expand CLAUDE.md with 8 architecture/API/LLM/rules sections, add .claude/ settings and slash commands
-- UX polish: fix log timestamps, open SOUL.md by default, remove provider badge, frontal camera start, mobile layout, thinking cursor, stillness cue
+---
 
-### Added
-- **Session memory (Phase 1)** — FORM now remembers what it thought in past sessions. `api/session.js` stores last 5 sessions (thoughts + exchange count) in KV. `identity.js` collects thoughts during a session, saves on page unload via `sendBeacon`, and auto-saves every 5 exchanges. Session summaries are injected into the system prompt so FORM can reference its own history. (2026-03-01)
-- **Body self-discovery (Phase 2)** — FORM tracks which shapes and motions it has used and how many times, and which emotions it associated with them. `api/body.js` stores usage data in KV. `identity.js` exposes `recordBodyUse()`, `getBodyContext()` (injected into every prompt), and `getUntriedShapes()`. New heartbeat type `explore_body` picks 3 untried shapes from the 60×60 vocabulary and asks FORM to use one. (2026-03-01)
-- **Aesthetic vocabulary (Phase 3)** — System prompt now actively tells FORM to avoid over-used patterns (flagged with ⚠ in body context) and develop a personal style. `UPDATE_SOUL` is now mandatory every response, encouraging FORM to record aesthetic discoveries. (2026-03-01)
-- **Gemini 2.5 Flash fallback** — `api/chat.js` now falls back to Gemini 2.5 Flash (`gemini-2.5-flash` on the `v1beta` OpenAI-compatible endpoint) when Groq fails. Requires `GEMINI_API_KEY` in Vercel env vars. Provider badge in UI shows which model responded. (2026-03-01)
-- **Clock/date intent intercept** — `chat.js` `_checkIntent()` bypasses the LLM entirely for "what time is it" / "what date" type queries, responding instantly with `DISPLAY: CLOCK` or `DISPLAY: DATE`. (2026-03-01)
-- **Accordion UI for IDENTITY/SOUL panels** — panels are now collapsible accordions at the top of the side panel, collapsed by default to give more space to the log. (2026-03-01)
-- **Ollama fallback in browser chat** — `chat.js` now tries local Ollama (`localhost:11434/mistral`) first with a 2.5s timeout; falls back to Groq/Llama-3.3-70B via Vercel if Ollama is not available. Eliminates rate-limit errors when running locally. (2026-03-01)
-- **OpenClaw switched to Ollama** — `openclaw models set ollama/mistral`; heartbeat script no longer requires `GROQ_API_KEY`. Autonomous heartbeats are now fully free and unlimited. (2026-03-01)
-- **README rewrite** — reflects full architecture: 60×60 grid, OpenClaw/Groq brain, Vercel KV (Upstash), all API endpoints, OpenClaw setup guide. (2026-03-01)
-- **TROUBLESHOOT.md** — build log documenting all issues encountered and how they were resolved. (2026-03-01)
-
-### Changed
-- Heartbeat rotation expanded: `reflect → explore_body → feel_news → scan_self → explore → explore_body`. Body exploration appears twice for more frequent vocabulary discovery. (2026-03-01)
-- Heartbeat idle threshold raised from 45s → 160s (2m40s). Reduces interruptions during active conversations. (2026-03-01)
-- LLM priority order: Groq (primary, 14k req/day) → Gemini 2.5 Flash (free fallback) → Ollama (local). Removed Ollama-first ordering; Vercel deployment now correctly uses Groq as primary. (2026-03-01)
-
-### Removed
-- `openclaw-skill/SKILL.md` and `scripts/openclaw-setup.sh` — removed as no longer needed. (2026-03-01)
+## [0.4.0] — 2026-03-02
 
 ### Fixed
-- Hardcoded `GROQ_API_KEY` removed from `scripts/form-heartbeat.sh`; key is now read from environment. (2026-03-01)
-- 429 rate-limit errors from Groq now show a helpful message pointing the user to Ollama. (2026-03-01)
+- Log timestamps were showing absolute unix time (~29190000:00); now session-relative from page load
+- Groq TPM rate-limiting caused by unbounded conversation history; `_history` now trimmed to last 8 messages before each LLM call
+- `api/chat.js` silently swallowed Groq/Gemini errors; now captures and surfaces them in the 429 response body
+- Camera starts in a frontal inFORM-style position and delays auto-rotate by 5s; previously started rotating mid-angle immediately
+
+### Changed
+- SOUL.md accordion opens by default — core writing was hidden on first visit
+- Provider badge label now lowercase (`groq` / `gemini` / `ollama`) for a subtler look
+- User chat message colour brightened (`#555` → `#999`) for readability
+- Thinking state shows animated `▋` cursor instead of static `...`
+- `MOTION: still` now logs `— holding still —` so viewers know flatness is intentional, not a broken state
+
+### Added
+- Mobile layout: canvas 55vh + panel 45vh stacked vertically on screens ≤640px
+- CLAUDE.md: env var warning (Preview environment must be checked alongside Production in Vercel dashboard), branch strategy section
+- TROUBLESHOOT.md: issue 17 (preview URL API keys not scoped to Preview env), issue 18 (Groq TPM hit from unbounded history)
 
 ---
 
-### Previous session (2026-03-01)
+## [0.3.0] — 2026-03-01
 
-- feat(track-b): OpenClaw + autonomous brain — api/events.js event queue, FORM skill (openclaw-skill/SKILL.md), form-heartbeat.sh shell script, browser polling every 3s
-- feat: FORM genuinely alive — system prompt rewrite (200 tokens, first-person), max_tokens 512→180, pre-seeded soul/identity defaults, display threshold fix (≤8 chars), KV graceful fallback, 45s heartbeat loop (reflect/explore/feel_news/scan_self)
-- feat: api/news.js (BBC RSS, no API key), api/code.js (codebase self-introspection), TASKS.md
-- feat: FORM Expansion — 60×60 grid, parametric gestures (MOTION/FREQUENCY/…), display vocabulary, emotion colors, KV identity persistence
-- feat: Vercel KV wired via Upstash Redis marketplace integration (region: fra1)
-- fix: switch from NVIDIA/Kimi to Groq/Llama-3.3-70B
-- feat: enable streaming — Edge runtime proxy, live log entry
-- fix: disable thinking mode on Kimi K2.5 to prevent 504 timeout
+### Added
+- **Session memory** — `api/session.js` stores last 5 sessions (thoughts + exchange count) in KV. FORM can reference its own history across sessions
+- **Body self-discovery** — `api/body.js` tracks shape/motion usage and emotion associations. `getBodyContext()` injected into every prompt; `explore_body` heartbeat picks untried shapes
+- **Aesthetic vocabulary** — system prompt flags over-used patterns (⚠), `UPDATE_SOUL` mandatory every response to record discoveries
+- **Gemini 2.5 Flash fallback** — `api/chat.js` falls back to `gemini-2.5-flash` (v1beta OpenAI endpoint) when Groq fails
+- **60×60 grid** — upgraded from 30×30; 3600 pins, camera, fog, shadow map updated
+- **Parametric gesture engine** — FORM controls MOTION/FREQUENCY/AMPLITUDE/SPEED/FOCAL_X/FOCAL_Y/COMPLEXITY/SYMMETRY directly
+- **Named shape library** — 25 named shapes (heart, mountain, spiral, crater, etc.) via `SHAPE:` command
+- **Display vocabulary** — 5×7 pixel font, 13×13 emoji bitmaps, live clock, date renderer
+- **Emotion colour system** — 7 states shift HSL across all pins with shimmer; 2s blend
+- **Heartbeat loop** — FORM speaks proactively when idle (reflect/explore_body/feel_news/scan_self)
+- **Identity KV persistence** — IDENTITY.md and SOUL.md persist across sessions via Vercel KV/Upstash
+- **Clock/date intent intercept** — time/date queries bypass the LLM entirely
+- `api/news.js` — random BBC RSS headline for feel_news heartbeat
+- `api/events.js` — KV event queue for autonomous external triggers
+- `api/body.js`, `api/session.js` — new persistence endpoints
+- TROUBLESHOOT.md — full build log of all issues and fixes
+- CLAUDE.md — project rules, architecture diagram, API reference, LLM spec
 
-### Planned
-- Extract shared pin grid engine to `core/`
-- Crontab setup for form-heartbeat.sh (every 10 minutes)
+### Changed
+- LLM fallback order: Groq primary → Gemini fallback → Ollama last resort (was Ollama-first)
+- System prompt rewritten: ~700 tokens → ~200 tokens, first-person FORM voice, strict one-sentence rule
+- `max_tokens` 512 → 180; prevents prose overflow
+- Heartbeat idle threshold 45s → 160s to reduce interruptions during conversations
+- IDENTITY/SOUL panels converted to collapsible accordions
+
+### Fixed
+- `api/identity.js` crashed when `@vercel/kv` not installed; now graceful fallback
+- Hardcoded `GROQ_API_KEY` removed from `scripts/form-heartbeat.sh`
 
 ---
 
 ## [0.2.0] — 2026-03-01
 
 ### Changed
-- Moved `ai-lifeform/` → `lifeforms/01-pin-grid/` as part of project restructure
+- Moved `ai-lifeform/` → `lifeforms/01-pin-grid/` as part of multi-lifeform project restructure
 - Added root `CLAUDE.md`, `CHANGELOG.md`, `README.md`, `.gitignore`
 - Added `core/` (shared engine placeholder) and `docs/` (vision, architecture)
 - Initialised git repository and pushed to GitHub

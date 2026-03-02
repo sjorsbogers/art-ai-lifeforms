@@ -6,43 +6,60 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ## [Unreleased]
 
-### Fixed (2026-03-02 — UX Polish)
-- Log timestamps now show session-relative time (00:00 from page load) instead of broken absolute unix time
-- Camera starts frontal (0, 38, 68) — inFORM-style face-on view — then begins slow auto-rotate after 5s
-- SOUL.md accordion opens by default; the core writing was hidden on first visit
-- Removed GROQ/GEMINI/OLLAMA provider badge from chat UI — broke the lifeform fiction
-- Thinking state now shows a blinking `▋` cursor instead of static `'...'`
-- `MOTION: still` now logs `— holding still —` so the flat grid reads as intentional, not broken
-- Mobile layout: canvas 55vh + panel 45vh stacked vertically on screens ≤640px
+---
 
-### Added (2026-03-01 — Making It Genuinely Alive)
-- Heartbeat loop: FORM speaks proactively after 45s idle; cycles through reflect/explore/feel_news/scan_self types
-- `api/news.js`: pulls a random BBC RSS headline (no API key); used by feel_news heartbeat
-- `api/code.js`: whitelisted introspection endpoint so FORM can read its own source files
-- Pre-seeded IDENTITY + SOUL defaults (name, creature, signature, purpose, first_thought, fears, desires, truth) — applied on first run only, KV values are never overwritten
-- TASKS.md at project root: living checklist of blocking and upcoming work
+## [0.4.0] — 2026-03-02
 
-### Changed (2026-03-01 — Making It Genuinely Alive)
-- `chat.js`: system prompt rewritten from ~700 tokens to ~200 tokens, first-person voice, strict one-sentence rule, embedded example; `sendHeartbeat(type)` added for spontaneous thoughts
-- `api/chat.js`: `max_tokens` reduced from 512 to 180 to stop the model filling the budget with prose
-- `brain.js`: DISPLAY word threshold raised from ≤3 to ≤8 chars (words like HELLO now show all at once)
-- `api/identity.js`: graceful fallback when `@vercel/kv` is not installed — GET returns empty state, POST returns `{ok:true}`
-- `main.js`: heartbeat loop added; response handler refactored into `_applyResponse()` shared by both `send` and `sendHeartbeat`; heartbeat thoughts logged with ♥ prefix
-
-### Added
-- Phase 1: Grid upgrade 30×30 → 60×60 (3600 pins); camera, fog, OrbitControls, and shadow map updated for larger canvas
-- Phase 2: Identity persistence via Vercel KV (`api/identity.js`); state loads on startup and saves on every identity/soul update (debounced 2s)
-- Phase 3: Parametric gesture engine — FORM controls MOTION/FREQUENCY/AMPLITUDE/SPEED/FOCAL_X/FOCAL_Y/COMPLEXITY/SYMMETRY directly; not limited to named presets
-- Phase 4a: `display.js` — 5×7 pixel font (A–Z, 0–9, punctuation), 13×13 emoji bitmaps (8 types), clock and date renderers; FORM can now spell words and show visuals on its own body
-- Phase 4b: Emotion color system — 7 emotion states each shift pin HSL + optional shimmer; blends over 2 seconds
-- Phase 5: Extended LLM response format — full parser for parametric params, DISPLAY, EMOTION, SAVE_GESTURE, UPDATE_IDENTITY, UPDATE_SOUL; rich system prompt with identity/soul/gesture/history context injection
-- Phase 6: Agentive self-authorship — FORM can name and save its own gesture patterns to KV (`SAVE_GESTURE:`); vocabulary grows across sessions; emotional history tracked and fed back into every LLM call
+### Fixed
+- Log timestamps displayed absolute unix time (~29190000:00); now session-relative from page load (`identity.js`: `_initTime` recorded in `init()`)
+- Groq TPM rate-limiting from unbounded `_history`: trimmed to last 8 messages per LLM call
+- `api/chat.js` silently swallowed provider errors; now captures Groq/Gemini error bodies and includes them in 429 response
+- Camera was already mid-rotation on first frame; now starts frontal at `(0, 38, 68)` and delays auto-rotate 5s
 
 ### Changed
-- `brain.js`: new methods `setParametricGesture()`, `setDisplay()`, `setEmotion()`, `saveGesture()`; display takes priority over gesture in `getHeightMap()`
-- `identity.js`: open-ended key/value fields (FORM can write any key); `getSystemContext()` for prompt injection; `addEmotionalEntry()` and `getSavedGestures()`
-- `chat.js`: rewritten parser; system prompt now includes full identity context and capabilities description
-- `main.js`: `onResponse` handler applies all new fields in order
+- SOUL.md accordion opens by default so the core writing is visible on first visit
+- Provider badge text now lowercase (`groq` / `gemini` / `ollama`)
+- User chat message colour brightened: `var(--text-dim)` (#555) → `#999`
+- Thinking state replaced static `'...'` log entry with animated `▋` cursor (`.log-msg.thinking::after`)
+- `MOTION: still` now logs `— holding still —` to make intentional stillness legible to viewers
+- Error message when all providers fail now points to `/api/debug` instead of generic "Check your connection"
+
+### Added
+- Mobile layout (`@media max-width: 640px`): canvas 55vh stacked above panel 45vh, full width
+
+---
+
+## [0.3.0] — 2026-03-01
+
+### Added
+- **Session memory** — `api/session.js`: stores last 5 sessions (thoughts[], exchange count) in KV key `form:sessions`. `identity.js` collects thoughts during session, saves on `beforeunload` via `sendBeacon` + auto-save every 5 exchanges. `getSessionContext()` injected into system prompt
+- **Body self-discovery** — `api/body.js`: tracks `{ name: { count, emotions } }` per shape/motion in KV `form:body_usage`. `recordBodyUse()` called after every response. `getBodyContext()` injects tried/untried shapes and aesthetic vocabulary into system prompt. `getUntriedShapes()` drives `explore_body` heartbeat
+- **Aesthetic vocabulary** — system prompt flags over-used shapes (⚠ after 5+ uses), `UPDATE_SOUL` mandatory every response
+- **Heartbeat loop** — FORM speaks proactively when idle >160s. Types: `reflect`, `explore_body`, `feel_news`, `scan_self`, `explore`
+- **Named shape library** — 25 shapes (`heart`, `mountain`, `valley`, `spiral`, `crater`, `ring`, `checkerboard`, …) via `SHAPE:` command; auto-clears after 8s
+- **Display vocabulary** — `display.js`: 5×7 pixel font (A–Z, 0–9, punctuation), 13×13 emoji bitmaps (8 types), live clock renderer, date renderer
+- **Emotion colour system** — 7 states (neutral/excited/shy/proud/sad/happy/angry) shift HSL across all pins; shimmer for excited/angry/happy; 2s lerp blend
+- **Parametric gesture engine** — FORM controls MOTION/FREQUENCY/AMPLITUDE/SPEED/FOCAL_X/FOCAL_Y/COMPLEXITY/SYMMETRY directly via LLM response
+- **Agentive self-authorship** — `SAVE_GESTURE:` persists named gesture patterns to KV; vocabulary grows across sessions
+- **60×60 grid** — upgraded from 30×30 (3600 pins); camera, fog range, shadow map, and `CONFIG` constants updated
+- **Gemini 2.5 Flash fallback** — `api/chat.js` falls back to `gemini-2.5-flash` on v1beta OpenAI endpoint when Groq returns non-200
+- **Provider badge** — UI chip in chat bar shows which model responded (GROQ / GEMINI / OLLAMA)
+- **Clock/date intent intercept** — `_checkIntent()` in `chat.js` bypasses LLM for time/date queries; instant response
+- `api/news.js` — random BBC RSS headline (no API key) for `feel_news` heartbeat
+- `api/events.js` — KV event queue (`form:event_queue`) for external autonomous triggers; browser polls every 3s
+- IDENTITY + SOUL defaults pre-seeded on first run (not applied if KV values already exist)
+- `api/body.js`, `api/session.js` — new Vercel serverless functions
+
+### Changed
+- LLM fallback order: Groq (primary, 14k req/day) → Gemini 2.5 Flash → Ollama last resort
+- System prompt: ~700 tokens → ~200 tokens, first-person FORM voice, strict one-sentence thought rule
+- `api/chat.js` `max_tokens`: 512 → 180
+- Heartbeat idle threshold: 45s → 160s
+- `brain.js` DISPLAY word threshold: ≤3 chars → ≤8 chars (words like HELLO render all at once)
+- IDENTITY/SOUL panels converted from static blocks to collapsible accordions
+
+### Fixed
+- `api/identity.js` crashed at import when `@vercel/kv` not installed; wrapped in try/catch with graceful empty-state fallback
 
 ---
 

@@ -83,6 +83,38 @@ Do not leave a session with uncommitted local changes.
 
 ---
 
+## Branch strategy
+
+```
+main          — always deployable; Vercel auto-deploys on every push
+feature/*     — use for multi-session or exploratory work; merge via PR when stable
+hotfix/*      — use for urgent fixes; merge directly to main
+```
+
+**When to commit directly to `main`:**
+- Bug fixes, small UI tweaks, documentation updates, config changes
+
+**When to use a feature branch:**
+- New lifeforms
+- Multi-session feature work (e.g. a new gesture system, a new API endpoint set)
+- Anything that might break main before it's ready
+
+**Release versioning:**
+- When a meaningful set of features is stable, move `[Unreleased]` in both changelogs to a new `[X.Y.Z]` version
+- Tag the commit: `git tag vX.Y.Z && git push origin vX.Y.Z`
+- Semantic: MAJOR.MINOR.PATCH — new lifeform = minor bump, bug fix = patch, breaking change = major
+
+**Commit message format (Conventional Commits):**
+```
+feat(scope): short description     ← new feature
+fix(scope): short description      ← bug fix
+chore: short description           ← tooling, deps, config
+docs: short description            ← documentation only
+refactor(scope): short description ← no behaviour change
+```
+
+---
+
 ## Conventions
 
 - Changelog format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
