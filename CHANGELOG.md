@@ -10,6 +10,8 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ## [Unreleased]
 
+- feat: add /rc slash command for remote-controlling FORM via events API
+
 ---
 
 ## [0.4.0] — 2026-03-02
