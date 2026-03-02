@@ -365,7 +365,7 @@ html, body {
 }
 
 .log-msg.user-message {
-  color: var(--text-dim);
+  color: #999;
 }
 
 .log-msg.thinking::after {
