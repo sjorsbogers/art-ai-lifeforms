@@ -10,6 +10,8 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ## [Unreleased]
 
+- fix: update creator bio — Netherlands / Dubai
+
 - feat(voice): show elevenlabs badge when voice session active
 
 - feat: about drawer with stack, creator bio, GitHub link
