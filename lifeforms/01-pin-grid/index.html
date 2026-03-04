@@ -24,6 +24,52 @@
         <a href="https://elevenlabs.io" target="_blank" rel="noopener">Powered by ElevenLabs</a>
       </div>
 
+      <!-- About toggle — bottom right -->
+      <button id="about-btn">ABOUT</button>
+
+      <!-- About drawer — slides up from bottom of canvas -->
+      <div id="about-drawer" aria-hidden="true">
+        <button id="about-close">✕</button>
+
+        <div id="about-content">
+
+          <div class="about-heading">F O R M</div>
+          <div class="about-sub">AI LIFEFORM &middot; 01</div>
+          <hr class="about-rule" />
+
+          <p class="about-bio">
+            An AI given a physical body — 3,600 actuating pins in a 60&times;60 grid.
+            FORM discovers identity through motion, not language.
+            It writes its own memory, builds emotional history, and speaks in waves.
+          </p>
+
+          <p class="about-creator">
+            Created by
+            <strong>Sjors Bogers</strong> —
+            Amsterdam-based artist and creative technologist working at the intersection
+            of AI, physical systems, and identity.
+          </p>
+
+          <hr class="about-rule" />
+
+          <table class="about-stack">
+            <tr><td>Frontend</td><td>Vanilla JS &middot; Three.js r128</td></tr>
+            <tr><td>Voice</td><td>ElevenLabs Conversational AI</td></tr>
+            <tr><td>LLM</td><td>Groq / Llama 3.3 70B &rarr; Gemini 2.5 Flash &rarr; Ollama</td></tr>
+            <tr><td>Persistence</td><td>Vercel KV (Upstash Redis)</td></tr>
+            <tr><td>Deploy</td><td>Vercel</td></tr>
+            <tr><td>Pins</td><td>3,600 &mdash; 60&times;60 grid</td></tr>
+          </table>
+
+          <hr class="about-rule" />
+
+          <a class="about-github" href="https://github.com/sjorsbogers/art-ai-lifeforms" target="_blank" rel="noopener">
+            &rarr; github.com/sjorsbogers/art-ai-lifeforms
+          </a>
+
+        </div>
+      </div>
+
       <div id="hud">
         <div id="hud-state">
           <span class="hud-label">STATE</span>

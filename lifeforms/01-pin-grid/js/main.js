@@ -22,6 +22,32 @@
   const chatSend        = document.getElementById('chat-send');
   const voiceBtn        = document.getElementById('voice-btn');
   const voiceStatus     = document.getElementById('voice-status');
+  const aboutBtn        = document.getElementById('about-btn');
+  const aboutDrawer     = document.getElementById('about-drawer');
+  const aboutClose      = document.getElementById('about-close');
+
+  // -- About drawer --------------------------------------------------------
+
+  if (aboutBtn) {
+    aboutBtn.addEventListener('click', () => {
+      aboutDrawer.classList.add('open');
+      aboutDrawer.setAttribute('aria-hidden', 'false');
+    });
+  }
+
+  if (aboutClose) {
+    aboutClose.addEventListener('click', () => {
+      aboutDrawer.classList.remove('open');
+      aboutDrawer.setAttribute('aria-hidden', 'true');
+    });
+  }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+      aboutDrawer.classList.remove('open');
+      aboutDrawer.setAttribute('aria-hidden', 'true');
+    }
+  });
 
   // -- Accordion toggles (IDENTITY.md / SOUL.md) ----------------------------
 

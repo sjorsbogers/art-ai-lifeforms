@@ -485,6 +485,149 @@ html, body {
   }
 }
 
+/* ── About button ────────────────────────────── */
+
+#about-btn {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.2);
+  font-family: var(--hud-font);
+  font-size: 8px;
+  letter-spacing: 0.18em;
+  padding: 5px 10px;
+  cursor: pointer;
+  z-index: 10;
+  transition: color 0.2s, border-color 0.2s;
+}
+
+#about-btn:hover {
+  color: rgba(255,255,255,0.55);
+  border-color: rgba(255,255,255,0.3);
+}
+
+/* ── About drawer ────────────────────────────── */
+
+#about-drawer {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 70%;
+  background: rgba(8,8,8,0.97);
+  border-top: 1px solid var(--border);
+  z-index: 20;
+  transform: translateY(100%);
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+#about-drawer.open {
+  transform: translateY(0);
+}
+
+#about-close {
+  position: absolute;
+  top: 16px;
+  right: 20px;
+  background: transparent;
+  border: none;
+  color: rgba(255,255,255,0.2);
+  font-size: 13px;
+  cursor: pointer;
+  font-family: var(--hud-font);
+  transition: color 0.2s;
+}
+
+#about-close:hover {
+  color: rgba(255,255,255,0.6);
+}
+
+#about-content {
+  padding: 40px 48px 48px;
+  max-width: 560px;
+}
+
+.about-heading {
+  font-size: 22px;
+  letter-spacing: 0.45em;
+  color: #fff;
+  font-weight: 300;
+  padding-right: 0.45em;
+}
+
+.about-sub {
+  font-size: 8px;
+  letter-spacing: 0.22em;
+  color: rgba(255,255,255,0.3);
+  text-transform: uppercase;
+  margin-top: 4px;
+}
+
+.about-rule {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 22px 0;
+}
+
+.about-bio {
+  font-size: 11px;
+  line-height: 1.9;
+  color: var(--text-dim);
+  margin-bottom: 16px;
+}
+
+.about-creator {
+  font-size: 11px;
+  line-height: 1.9;
+  color: var(--text-dim);
+}
+
+.about-creator strong {
+  color: var(--text);
+}
+
+.about-stack {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 10px;
+  font-family: var(--hud-font);
+}
+
+.about-stack td {
+  padding: 5px 0;
+  vertical-align: top;
+  line-height: 1.6;
+}
+
+.about-stack td:first-child {
+  color: var(--text-dim);
+  letter-spacing: 0.08em;
+  width: 110px;
+  flex-shrink: 0;
+}
+
+.about-stack td:last-child {
+  color: var(--text);
+}
+
+.about-github {
+  display: inline-block;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--accent);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.about-github:hover {
+  color: #fff;
+}
+
 /* ── Animations ──────────────────────────────── */
 
 @keyframes fadeIn {
