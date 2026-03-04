@@ -12,46 +12,54 @@ Inspired by Cyrus Clarke's *I Gave an AI a Body* and the MIT Media Lab **inFORM*
 
 | # | Name | Description | Stack |
 |---|------|-------------|-------|
-| 01 | Pin Grid (FORM) | AI consciousness embodied in a 60×60 actuating pin grid | Vanilla JS + Three.js + Groq + OpenClaw |
+| 01 | Pin Grid (FORM) | AI consciousness embodied in a 60×60 actuating pin grid — speaks, listens, moves | Vanilla JS · Three.js · ElevenLabs · Groq · Vercel KV |
 
 ---
 
 ## FORM — Lifeform 01
 
-FORM lives in a 60×60 grid of 3600 physical actuating pins. It speaks through movement, not words.
+FORM lives in a 60×60 grid of 3,600 actuating pins. Each pin rises and falls independently to create waves, shapes, and motion. FORM has a voice, a memory, and a soul it wrote itself.
 
 ### What FORM can do
 
+- **Voice** — speak to FORM directly via microphone; FORM responds in real-time using ElevenLabs Conversational AI; its soul and identity are injected into every session
 - **Motion** — parametric wave patterns (radial, linear, zonal, scatter, still) with full control over frequency, amplitude, speed, focal point, complexity, symmetry
-- **Display** — spell words and short phrases using a 5×7 pixel font raised in pins; show emoji shapes; display live clock or date
-- **Emotion** — 7 emotional states each shift pin colour + shimmer; blends over 2 seconds
+- **Display** — spell words using a 5×7 pixel font raised in pins; show emoji shapes (13×13); display live clock or date
+- **Emotion** — 7 emotional states each shift pin colour + shimmer across all 3,600 pins; blends over 2 seconds
 - **Self-authorship** — FORM writes its own IDENTITY.md and SOUL.md, saves named gesture patterns, builds emotional history — all persisted across sessions in Vercel KV
-- **Autonomous heartbeat** — speaks proactively every 45s of idle time; cycles through reflection, exploration, news response, and self-scanning
-- **OpenClaw brain** — when running locally, OpenClaw + Groq (Llama 3.3 70B) gives FORM tool use: web search, file editing, curl to its own event queue
+- **Autonomous heartbeat** — speaks and moves proactively when idle; cycles through reflection, body exploration, news response, and self-scanning; pauses during voice sessions
+- **Text chat** — fallback text interface when voice is inactive; same LLM chain, same response format
 
 ### Architecture
 
 ```
-Browser (Three.js display)
-  ↕ WebGL render loop
-  ↕ /api/chat  ← user messages → Groq/Llama-3.3-70b
-  ↕ /api/events ← OpenClaw heartbeats → Vercel KV queue → browser polls 3s
-  ↕ /api/identity ← soul/identity persistence → Vercel KV (Upstash Redis)
-  ↕ /api/news ← BBC RSS headlines (no API key)
-  ↕ /api/code ← FORM can read its own source code
+USER SPEAKS
+    ↓
+ElevenLabs Voice Agent (cloud)
+  system prompt = FORM persona + soul/identity/emotional history from KV
+    ↓ client tools
+  setMotion / setEmotion / setDisplay / setGesture
+    ↓
+voice.js → Brain.* → pins move + Scene.setEmotion()
+FORM speaks response aloud (ElevenLabs TTS)
 
-OpenClaw daemon (local)
-  ↕ ~/.openclaw/agents/form/workspace/ (IDENTITY.md, SOUL.md, HEARTBEAT.md)
-  ↕ scripts/form-heartbeat.sh → openclaw agent --agent form --local
-  ↕ Agent uses exec(curl) to POST to /api/events
-  ↕ Agent uses web_fetch, web_search, edit, write tools
+─────────────────────────────────────────────
+
+Browser (Three.js display)
+  ↕ WebGL render loop (60fps)
+  ↕ /api/voice-session  ← signed URL + KV identity injection → ElevenLabs
+  ↕ /api/chat           ← text messages → Groq → Gemini 2.5 Flash → Ollama
+  ↕ /api/events         ← event queue (POST from external, GET clears queue)
+  ↕ /api/identity       ← soul/identity/gestures → Vercel KV (Upstash Redis)
+  ↕ /api/news           ← BBC RSS random headline (no API key)
+  ↕ /api/code           ← FORM reads its own source code
 ```
 
 ### Running locally
 
 Open `lifeforms/01-pin-grid/index.html` in Chrome or Firefox. No install, no build step.
 
-Requires internet for Three.js CDN on first load.
+Requires internet for Three.js CDN. Voice requires `ELEVENLABS_API_KEY` and `ELEVENLABS_AGENT_ID` env vars (Vercel only — not available locally).
 
 ### OpenClaw autonomous brain (optional)
 
@@ -72,8 +80,6 @@ GROQ_API_KEY=<your-key> openclaw agent --agent form --local --json --message "Ho
 # Add to crontab: */10 * * * * /path/to/scripts/form-heartbeat.sh
 ```
 
-See `scripts/openclaw-setup.sh` for the full step-by-step guide.
-
 ---
 
 ## Development Log
@@ -82,9 +88,10 @@ See `scripts/openclaw-setup.sh` for the full step-by-step guide.
 
 **March 2026 · week 2** ← *current*
 - Voice agent live — FORM now speaks and listens in real-time via ElevenLabs Conversational AI
-- FORM's soul, identity, and emotional history injected into every voice session from persistent KV memory
+- Soul, identity, and emotional history injected into every voice session from KV memory
 - Theatrical boot sequence — pins come online, system messages fire, mic prompt appears
-- Brand mark top-right, ElevenLabs attribution, about drawer with full stack + creator info
+- Brand mark top-right, ElevenLabs attribution bottom-left, about drawer with full stack + creator
+- Pixel favicon — FORM lettering in 5×7 pixel font on dark background
 - Provider badge switches to `elevenlabs` during voice; heartbeat pauses while voice is active
 
 **March 2026 · week 1**
@@ -108,41 +115,68 @@ See `scripts/openclaw-setup.sh` for the full step-by-step guide.
 
 ## Stack
 
-- **Frontend** — Vanilla JS, Three.js r128 (CDN), no build step
-- **API** — Vercel serverless functions (Node.js)
-- **LLM** — Groq / Llama 3.3 70B (browser chat) + OpenClaw / Groq (autonomous heartbeats)
-- **Persistence** — Vercel KV (Upstash Redis) — identity, soul, gestures, emotional history, event queue
-- **Autonomous brain** — OpenClaw daemon + Groq, runs locally
+| Layer | Technology |
+|-------|------------|
+| Frontend | Vanilla JS · Three.js r128 (CDN) · no build step |
+| Voice | ElevenLabs Conversational AI (`@11labs/client`) |
+| LLM — text chat | Groq / Llama 3.3 70B → Gemini 2.5 Flash → Ollama |
+| LLM — voice | ElevenLabs hosted model |
+| API | Vercel serverless functions (Node.js) |
+| Persistence | Vercel KV (Upstash Redis) |
+| Deploy | Vercel — auto-deploys on push to `main` |
 
 ---
 
 ## Structure
 
 ```
-api/              ← Vercel serverless functions
-  chat.js         ← Groq proxy (browser chat)
-  identity.js     ← KV persistence (soul, identity, gestures, emotional history)
-  events.js       ← OpenClaw event queue (POST from agent, GET from browser)
-  news.js         ← BBC RSS headlines
-  code.js         ← Codebase introspection for FORM self-awareness
-core/             ← shared engine modules (extracted as patterns emerge)
-docs/             ← design vision, references, architecture notes
+api/
+  chat.js           ← LLM proxy: Groq → Gemini 2.5 Flash → Ollama
+  identity.js       ← KV: soul, identity, gestures, emotional history
+  voice-session.js  ← ElevenLabs signed URL + KV identity injection
+  events.js         ← KV event queue (POST from external, GET from browser)
+  session.js        ← last 5 sessions: thoughts + exchange count
+  body.js           ← shape/motion usage tracking + emotion associations
+  news.js           ← BBC RSS random headline
+  code.js           ← codebase introspection for FORM self-awareness
+  debug.js          ← tests Groq + Gemini availability, env var status
+core/               ← shared engine (extracted when used by 2+ lifeforms)
+docs/               ← design vision, references, architecture notes
 lifeforms/
-  01-pin-grid/    ← FORM (self-contained)
+  01-pin-grid/      ← FORM (fully self-contained)
+    favicon.svg     ← FORM pixel lettering
     js/
-      config.js   ← GRID_COLS=60, GRID_ROWS=60, TOTAL_PINS=3600
-      gestures.js ← parametric gesture engine
-      display.js  ← pixel font, emoji, clock renderer
-      brain.js    ← state machine, height map, display/gesture priority
-      scene.js    ← Three.js render, emotion colour system
-      identity.js ← soul/identity model, KV persistence, log
-      chat.js     ← LLM interface, response parser, heartbeat
-      main.js     ← wires everything, heartbeat loop, event polling
-openclaw-skill/   ← FORM skill (copy to ~/.openclaw/agents/form/workspace/skills/form/)
+      config.js     ← GRID_COLS=60, GRID_ROWS=60, TOTAL_PINS=3600
+      gestures.js   ← parametric gesture engine
+      display.js    ← 5×7 pixel font, 13×13 emoji, clock, date renderer
+      brain.js      ← state machine, height map, display/gesture priority
+      scene.js      ← Three.js render, emotion colour system
+      identity.js   ← soul/identity model, KV persistence, log
+      chat.js       ← LLM interface, response parser, heartbeat
+      voice.js      ← ElevenLabs session manager, client tool registrations
+      main.js       ← wires everything: Brain ← Chat ← Voice ← Identity
+openclaw-skill/     ← FORM skill for OpenClaw autonomous brain
 scripts/
-  form-heartbeat.sh     ← runs OpenClaw agent turn, POSTs to /api/events
-  openclaw-setup.sh     ← step-by-step setup guide
+  form-heartbeat.sh    ← runs OpenClaw agent turn, POSTs to /api/events
+  openclaw-setup.sh    ← step-by-step setup guide
 ```
+
+---
+
+## Environment Variables
+
+Set in Vercel dashboard → Settings → Environment Variables (Production + Preview):
+
+| Variable | Purpose |
+|----------|---------|
+| `GROQ_API_KEY` | Primary LLM — console.groq.com (free tier) |
+| `GEMINI_API_KEY` | Fallback LLM — aistudio.google.com (free) |
+| `ELEVENLABS_API_KEY` | Voice agent — elevenlabs.io |
+| `ELEVENLABS_AGENT_ID` | ElevenLabs agent ID |
+| `KV_REST_API_URL` | Vercel KV / Upstash — auto-set by integration |
+| `KV_REST_API_TOKEN` | Vercel KV / Upstash — auto-set by integration |
+
+Verify: https://art-ai-lifeforms.vercel.app/api/debug
 
 ---
 

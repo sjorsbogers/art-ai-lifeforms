@@ -10,6 +10,8 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ## [Unreleased]
 
+- docs: full README rewrite — voice, stack table, architecture, structure, env vars
+
 - feat: pixel font favicon — FORM letters in 2x2 grid on dark bg
 
 - docs: add development log to README, rule to keep it updated in CLAUDE.md
