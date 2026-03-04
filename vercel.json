@@ -3,20 +3,14 @@
     { "source": "/", "destination": "/lifeforms/01-pin-grid/" }
   ],
   "functions": {
-    "api/chat.js": {
-      "maxDuration": 60
-    },
-    "api/identity.js": {
-      "maxDuration": 10
-    },
-    "api/events.js": {
-      "maxDuration": 10
-    },
-    "api/news.js": {
-      "maxDuration": 10
-    },
-    "api/code.js": {
-      "maxDuration": 10
-    }
+    "api/chat.js":          { "maxDuration": 60 },
+    "api/identity.js":      { "maxDuration": 10 },
+    "api/events.js":        { "maxDuration": 10 },
+    "api/news.js":          { "maxDuration": 10 },
+    "api/code.js":          { "maxDuration": 10 },
+    "api/voice-session.js": { "maxDuration": 10 },
+    "api/session.js":       { "maxDuration": 10 },
+    "api/body.js":          { "maxDuration": 10 },
+    "api/debug.js":         { "maxDuration": 10 }
   }
 }
