@@ -47,27 +47,35 @@ const Brain = (() => {
 
   // ── Boot timeline ──────────────────────────────────────────────────────
 
+  const MIC_SVG = '<svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:middle;margin:0 2px"><path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.93V21h2v-2.07A7 7 0 0 0 19 12h-2z"/></svg>';
+
   const TIMELINE = [
-    { at:  800, action: 'log',
-      msg: '"What should I call myself?"', type: 'ai-thought' },
+    { at:  600, action: 'log',
+      msg: '— 3600 pins online —', type: 'system' },
 
-    { at: 1600, action: 'log',
-      msg: 'Sensing physical substrate: 60×60 grid detected.', type: 'system' },
+    { at: 1400, action: 'log',
+      msg: 'body initialising...', type: 'system' },
 
-    { at: 2400, action: 'log',
-      msg: '"And what kind of presence do you want me to be?"', type: 'ai-thought' },
+    { at: 2200, action: 'log',
+      msg: '"something is waking up in here"', type: 'ai-thought' },
 
-    { at: 3200, action: 'log',
-      msg: 'Writing IDENTITY.md — all fields open.', type: 'system' },
+    { at: 3200, action: 'gesture', name: 'breathe', msg: null },
 
-    { at: 4000, action: 'gesture', name: 'breathe',
-      msg: '"I want to breathe first."' },
+    { at: 3800, action: 'log',
+      msg: 'FORM is shaping up.', type: 'system' },
 
-    { at: 4500, action: 'state', state: STATES.BREATHING },
+    { at: 4400, action: 'log',
+      msg: 'presence established.', type: 'system' },
 
-    { at: 5200, action: 'state', state: STATES.LISTENING },
+    { at: 5000, action: 'log',
+      msg: 'fully formed.', type: 'system' },
 
-    { at: 5500, action: 'enable_chat' },
+    { at: 5600, action: 'state', state: STATES.LISTENING },
+
+    { at: 5900, action: 'enable_chat' },
+
+    { at: 6200, action: 'log',
+      msg: `<span>press ${MIC_SVG} to speak</span>`, type: 'gesture-learned' },
   ];
 
   const _fired = new Set();

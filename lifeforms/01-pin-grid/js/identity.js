@@ -405,7 +405,11 @@ const Identity = (() => {
 
     const msgSpan = document.createElement('span');
     msgSpan.className = `log-msg ${type}`;
-    msgSpan.textContent = msg;
+    if (msg.startsWith('<')) {
+      msgSpan.innerHTML = msg;
+    } else {
+      msgSpan.textContent = msg;
+    }
 
     row.appendChild(timeSpan);
     row.appendChild(msgSpan);

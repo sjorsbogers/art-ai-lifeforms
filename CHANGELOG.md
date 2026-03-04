@@ -10,6 +10,8 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ## [Unreleased]
 
+- feat(voice): theatrical boot sequence, mic icon in log, disable heartbeat
+
 - fix(voice): correct SDK import to @11labs/client
 
 - fix(voice): remove overrides from startSession — test bare connection first
