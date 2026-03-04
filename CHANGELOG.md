@@ -10,6 +10,8 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ## [Unreleased]
 
+- feat(voice): show elevenlabs badge when voice session active
+
 - feat: about drawer with stack, creator bio, GitHub link
 
 - feat: FORM brand mark top-right, ElevenLabs attribution bottom-left + README

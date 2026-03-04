@@ -187,6 +187,13 @@
   function _initVoice() {
     if (!window.Voice) return;
 
+    function _setProviderBadge(name, cls) {
+      const el = document.getElementById('llm-provider');
+      if (!el) return;
+      el.textContent = name;
+      el.className = cls;
+    }
+
     Voice.onConnect = () => {
       _voiceActive = true;
       voiceBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>';
@@ -194,6 +201,7 @@
       setVoiceStatus('LIVE');
       setChatEnabled(false);
       stateEl.textContent = 'VOICE';
+      _setProviderBadge('elevenlabs', 'provider-gemini');
       Identity.writeLog('Voice session started.', 'system');
     };
 
