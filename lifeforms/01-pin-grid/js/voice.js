@@ -16,7 +16,7 @@
  *   Voice.stop()
  */
 
-import { Conversation } from 'https://esm.sh/@elevenlabs/client';
+import { Conversation } from 'https://esm.sh/@11labs/client';
 
 const Voice = {
   _conversation: null,
