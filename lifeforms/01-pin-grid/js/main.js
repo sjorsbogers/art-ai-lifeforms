@@ -20,6 +20,8 @@
   const stateEl         = document.getElementById('state-value');
   const chatInput       = document.getElementById('chat-input');
   const chatSend        = document.getElementById('chat-send');
+  const voiceBtn        = document.getElementById('voice-btn');
+  const voiceStatus     = document.getElementById('voice-status');
 
   // -- Accordion toggles (IDENTITY.md / SOUL.md) ----------------------------
 
@@ -146,6 +148,78 @@
   });
 
   Brain.onChatEnabled(() => setChatEnabled(true));
+
+  // -- Voice (ElevenLabs) --------------------------------------------------
+
+  let _voiceActive = false;
+
+  function setVoiceStatus(text) {
+    if (voiceStatus) voiceStatus.textContent = text;
+  }
+
+  // Wire Voice callbacks once Voice is available (loaded as ESM module)
+  function _initVoice() {
+    if (!window.Voice) return;
+
+    Voice.onConnect = () => {
+      _voiceActive = true;
+      voiceBtn.textContent = '⏹';
+      voiceBtn.title = 'Stop voice conversation';
+      setVoiceStatus('LIVE');
+      setChatEnabled(false);
+      stateEl.textContent = 'VOICE';
+      Identity.writeLog('Voice session started.', 'system');
+    };
+
+    Voice.onDisconnect = (reason) => {
+      _voiceActive = false;
+      voiceBtn.textContent = '🎙';
+      voiceBtn.title = 'Start voice conversation';
+      setVoiceStatus('');
+      setChatEnabled(true);
+      stateEl.textContent = 'LISTENING';
+      if (reason) {
+        Identity.writeLog(`Voice ended: ${reason}`, 'system');
+      } else {
+        Identity.writeLog('Voice session ended.', 'system');
+      }
+    };
+
+    Voice.onModeChange = (mode) => {
+      if (mode === 'speaking') {
+        Brain.setGestureFromLLM('noise');
+        setVoiceStatus('SPEAKING');
+      } else {
+        Brain.setGestureFromLLM('breathe');
+        setVoiceStatus('LISTENING');
+      }
+    };
+  }
+
+  // Voice button toggle
+  if (voiceBtn) {
+    voiceBtn.addEventListener('click', () => {
+      // Delay init in case voice.js ESM module hasn't resolved yet
+      if (!window.Voice) {
+        Identity.writeLog('Voice not available — check console.', 'system');
+        return;
+      }
+      if (_voiceActive) {
+        Voice.stop();
+      } else {
+        setVoiceStatus('CONNECTING…');
+        Voice.start();
+      }
+    });
+  }
+
+  // Poll for Voice availability (ESM module loads asynchronously)
+  const _voiceInitInterval = setInterval(() => {
+    if (window.Voice) {
+      _initVoice();
+      clearInterval(_voiceInitInterval);
+    }
+  }, 100);
 
   // -- OpenClaw event polling (picks up autonomous thoughts from KV queue) --
 

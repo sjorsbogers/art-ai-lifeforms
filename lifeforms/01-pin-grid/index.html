@@ -63,6 +63,8 @@
 
       <!-- Chat input — fixed at bottom -->
       <div id="chat-block">
+        <button id="voice-btn" title="Start voice conversation">🎙</button>
+        <span id="voice-status"></span>
         <input
           type="text"
           id="chat-input"
@@ -90,5 +92,7 @@
   <script src="js/chat.js"></script>
   <script src="js/scene.js"></script>
   <script src="js/main.js"></script>
+  <!-- voice.js uses ESM; exports window.Voice for main.js -->
+  <script type="module" src="js/voice.js"></script>
 </body>
 </html>

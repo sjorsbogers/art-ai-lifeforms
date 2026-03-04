@@ -313,6 +313,34 @@ html, body {
   opacity: 0.7;
 }
 
+/* ── Voice controls ──────────────────────────── */
+
+#voice-btn {
+  background: transparent;
+  border: none;
+  border-right: 1px solid var(--border);
+  color: var(--text-dim);
+  font-size: 14px;
+  padding: 0 14px;
+  cursor: pointer;
+  transition: color 0.2s;
+  flex-shrink: 0;
+}
+
+#voice-btn:hover {
+  color: var(--accent);
+}
+
+#voice-status {
+  font-size: 8px;
+  letter-spacing: 0.15em;
+  color: var(--green);
+  padding: 0 6px;
+  align-self: center;
+  min-width: 60px;
+  flex-shrink: 0;
+}
+
 /* ── Chat input — fixed at bottom of panel ───── */
 
 #chat-block {

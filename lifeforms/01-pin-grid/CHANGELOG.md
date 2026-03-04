@@ -6,6 +6,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ## [Unreleased]
 
+### Added
+- ElevenLabs voice agent: `js/voice.js` session manager with 4 client tools (`setMotion`, `setEmotion`, `setDisplay`, `setGesture`) wired to Brain.*
+- `api/voice-session.js`: generates signed ElevenLabs URL, injects FORM's soul/identity/emotional history from KV into system prompt per session
+- Mic button (`🎙`) and voice status indicator in chat bar; toggles to `⏹` while active
+- Voice state: disables text chat input while voice is active, re-enables on disconnect
+- Mode-change callbacks: `breathe` gesture while listening, `noise` gesture while FORM is speaking
+- CSS for `#voice-btn` and `#voice-status` matching terminal aesthetic
+
 ---
 
 ## [0.4.0] — 2026-03-02
