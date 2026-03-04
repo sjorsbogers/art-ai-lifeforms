@@ -90,13 +90,9 @@ const Voice = {
 
     // 4. Start session
     try {
-      const sessionConfig = { signedUrl, clientTools };
-      if (prompt) {
-        sessionConfig.overrides = { agent: { prompt: { prompt } } };
-      }
-
       this._conversation = await Conversation.startSession({
-        ...sessionConfig,
+        signedUrl,
+        clientTools,
 
         onConnect: () => {
           console.log('[Voice] Connected');

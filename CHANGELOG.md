@@ -10,6 +10,8 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ## [Unreleased]
 
+- fix(voice): remove overrides from startSession — test bare connection first
+
 - feat(voice): replace emoji mic with flat SVG icon; stop state shows square
 
 - fix(voice): use GET for ElevenLabs signed URL; pass identity prompt as SDK override
