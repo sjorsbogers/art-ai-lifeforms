@@ -10,6 +10,8 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ## [Unreleased]
 
+- docs: rewrite lifeform 01 README — voice, structure, persistence, env vars
+
 - docs: full README rewrite — voice, stack table, architecture, structure, env vars
 
 - feat: pixel font favicon — FORM letters in 2x2 grid on dark bg
