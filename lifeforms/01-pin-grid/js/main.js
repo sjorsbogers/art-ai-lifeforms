@@ -254,14 +254,14 @@
     return t;
   }
 
-  // Heartbeat disabled — voice is the primary interface
-  // setInterval(() => {
-  //   if (Brain.getState() !== 'LISTENING') return;
-  //   if (chatInput.disabled) return;
-  //   if (Date.now() - _lastUserMessage < HEARTBEAT_INTERVAL) return;
-  //   _lastUserMessage = Date.now();
-  //   Chat.sendHeartbeat(_nextHeartbeatType());
-  // }, HEARTBEAT_CHECK);
+  setInterval(() => {
+    if (Brain.getState() !== 'LISTENING') return;
+    if (chatInput.disabled) return;
+    if (_voiceActive) return;
+    if (Date.now() - _lastUserMessage < HEARTBEAT_INTERVAL) return;
+    _lastUserMessage = Date.now();
+    Chat.sendHeartbeat(_nextHeartbeatType());
+  }, HEARTBEAT_CHECK);
 
   // -- Boot ----------------------------------------------------------------
 

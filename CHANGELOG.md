@@ -10,6 +10,8 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ## [Unreleased]
 
+- fix(voice): re-enable heartbeat; pause it during active voice session
+
 - feat(voice): theatrical boot sequence, mic icon in log, disable heartbeat
 
 - fix(voice): correct SDK import to @11labs/client
