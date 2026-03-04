@@ -10,6 +10,8 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ## [Unreleased]
 
+- docs: add development log to README, rule to keep it updated in CLAUDE.md
+
 - fix: update creator bio — Netherlands / Dubai
 
 - feat(voice): show elevenlabs badge when voice session active

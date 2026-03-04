@@ -245,6 +245,7 @@ open https://art-ai-lifeforms.vercel.app/api/debug
 **Always:**
 - Run `./sync.sh "description"` (or `/sync`) at end of session if files changed
 - Keep `api/*.js` fallback-safe: wrap `require('@vercel/kv')` in try/catch, return graceful empty state
+- When a significant feature lands, add a bullet to the **current week** entry in the `## Development Log` section of `README.md` — keep it short, plain English, one line per feature
 - Maintain the LLM fallback chain: Groq primary → Gemini 2.5 Flash → Ollama last resort
 - Update both root `CHANGELOG.md` AND `lifeforms/01-pin-grid/CHANGELOG.md` for changes to Lifeform 01
 

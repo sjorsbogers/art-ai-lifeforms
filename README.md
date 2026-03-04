@@ -76,6 +76,36 @@ See `scripts/openclaw-setup.sh` for the full step-by-step guide.
 
 ---
 
+## Development Log
+
+> Active development — updated with each significant push.
+
+**March 2026 · week 2** ← *current*
+- Voice agent live — FORM now speaks and listens in real-time via ElevenLabs Conversational AI
+- FORM's soul, identity, and emotional history injected into every voice session from persistent KV memory
+- Theatrical boot sequence — pins come online, system messages fire, mic prompt appears
+- Brand mark top-right, ElevenLabs attribution, about drawer with full stack + creator info
+- Provider badge switches to `elevenlabs` during voice; heartbeat pauses while voice is active
+
+**March 2026 · week 1**
+- Remote control API — external systems can queue thoughts directly into FORM via `/api/events`
+- v0.4.0: camera starts frontal (inFORM-style), Groq rate-limit safeguard, mobile layout, animated thinking cursor
+
+**March 2026 · day 1**
+- v0.3.0: grid upgraded 30×30 → **60×60 = 3,600 pins**
+- Parametric gesture engine — FORM controls wave physics directly: frequency, amplitude, speed, focal point, complexity, symmetry
+- Emotion colour system — 7 states shift HSL across all 3,600 pins with shimmer; 2s blend
+- Named shape library (25 shapes: heart, crater, mountain, spiral…), 5×7 pixel font, live clock, date display
+- Gemini 2.5 Flash fallback when Groq unavailable; Ollama as local last resort
+- Session memory + body self-discovery — FORM tracks what it's tried, builds aesthetic vocabulary
+- Heartbeat loop — FORM thinks and moves autonomously when idle
+
+**February 2026**
+- v0.2.0: restructured into multi-lifeform architecture (`lifeforms/01-pin-grid/`), git + GitHub, Vercel deploy
+- v0.1.0: first working prototype — 30×30 pin grid, 5-state lifecycle (AWAKENING → LISTENING), identity panel, Three.js InstancedMesh render
+
+---
+
 ## Stack
 
 - **Frontend** — Vanilla JS, Three.js r128 (CDN), no build step
