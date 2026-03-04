@@ -10,6 +10,8 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ## [Unreleased]
 
+- feat(voice): replace emoji mic with flat SVG icon; stop state shows square
+
 - fix(voice): use GET for ElevenLabs signed URL; pass identity prompt as SDK override
 
 - feat: add /rc slash command for remote-controlling FORM via events API
