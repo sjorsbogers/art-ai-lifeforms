@@ -121,3 +121,9 @@ scripts/
 - Cyrus Clarke — *I Gave an AI a Body* (Substack)
 - MIT Media Lab — inFORM / neoFORM shape display
 - OpenClaw — https://openclaw.ai
+
+---
+
+## Attribution
+
+Voice powered by [ElevenLabs](https://elevenlabs.io).
