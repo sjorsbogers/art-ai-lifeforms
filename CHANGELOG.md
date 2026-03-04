@@ -10,6 +10,8 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ## [Unreleased]
 
+- fix(voice): use GET for ElevenLabs signed URL; pass identity prompt as SDK override
+
 - feat: add /rc slash command for remote-controlling FORM via events API
 - feat(voice): add ElevenLabs voice agent — mic button, voice.js session manager, api/voice-session.js signed URL endpoint with KV identity injection
 

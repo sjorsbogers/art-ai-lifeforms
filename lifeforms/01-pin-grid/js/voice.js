@@ -30,7 +30,7 @@ const Voice = {
     if (this._conversation) return; // already active
 
     // 1. Get signed URL (includes soul/identity override from KV)
-    let signedUrl;
+    let signedUrl, prompt;
     try {
       const res = await fetch('/api/voice-session');
       if (!res.ok) {
@@ -39,6 +39,7 @@ const Voice = {
       }
       const data = await res.json();
       signedUrl = data.signedUrl;
+      prompt    = data.prompt;
     } catch (err) {
       console.error('[Voice] Failed to get signed URL:', err);
       if (this.onDisconnect) this.onDisconnect(err.message);
@@ -89,9 +90,13 @@ const Voice = {
 
     // 4. Start session
     try {
+      const sessionConfig = { signedUrl, clientTools };
+      if (prompt) {
+        sessionConfig.overrides = { agent: { prompt: { prompt } } };
+      }
+
       this._conversation = await Conversation.startSession({
-        signedUrl,
-        clientTools,
+        ...sessionConfig,
 
         onConnect: () => {
           console.log('[Voice] Connected');

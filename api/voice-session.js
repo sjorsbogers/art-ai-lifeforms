@@ -93,18 +93,8 @@ module.exports = async function handler(req, res) {
   try {
     const url = `https://api.elevenlabs.io/v1/convai/conversation/get_signed_url?agent_id=${encodeURIComponent(agentId)}`;
     const r = await fetch(url, {
-      method:  'POST',
-      headers: {
-        'xi-api-key':   apiKey,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        conversation_config_override: {
-          agent: {
-            prompt: { prompt: fullPrompt },
-          },
-        },
-      }),
+      method:  'GET',
+      headers: { 'xi-api-key': apiKey },
     });
 
     if (!r.ok) {
@@ -113,7 +103,8 @@ module.exports = async function handler(req, res) {
     }
 
     const data = await r.json();
-    return res.status(200).json({ signedUrl: data.signed_url });
+    // Return signedUrl + fullPrompt so voice.js can pass the override via the SDK
+    return res.status(200).json({ signedUrl: data.signed_url, prompt: fullPrompt });
 
   } catch (err) {
     return res.status(500).json({ error: err.message });
