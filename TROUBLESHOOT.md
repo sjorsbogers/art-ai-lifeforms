@@ -286,3 +286,53 @@ crontab -e
 ```bash
 tail -f /tmp/form-heartbeat.log
 ```
+
+---
+
+## Session: 2026-03-04 — ElevenLabs Voice Agent
+
+### Issue 19 — Voice session drops immediately after connecting
+
+**Symptom:** Clicking the mic button logs the boot sequence but the session disconnects within one second. No audio. No error in the ElevenLabs dashboard either.
+
+**Root cause:** `voice.js` imported from `@elevenlabs/client` (the official package name), but that package does not exist on npm. The correct package for the ElevenLabs browser SDK is `@11labs/client` (numerals, not letters).
+
+**Fix:** Change the import/require to `@11labs/client`. If loading via a CDN script tag, use the `@11labs/client` unpkg or jsDelivr URL.
+
+**File:** `lifeforms/01-pin-grid/js/voice.js`
+
+---
+
+### Issue 20 — `api/voice-session.js` returns 502
+
+**Symptom:** The mic button triggers a fetch to `/api/voice-session` which returns HTTP 502. The ElevenLabs SDK never receives a signed URL and the session cannot start.
+
+**Root cause:** The endpoint was implemented as a POST handler. The ElevenLabs browser SDK calls the signed URL endpoint as GET. Vercel routes a GET to a POST-only function as a method-not-allowed, which manifests as 502 through the SDK's error path.
+
+**Fix:** Change `api/voice-session.js` to export a GET handler (or handle both methods). Verify with `curl -X GET https://art-ai-lifeforms.vercel.app/api/voice-session` — it should return a JSON object containing a `signed_url` field.
+
+**File:** `api/voice-session.js`
+
+---
+
+### Issue 21 — ElevenLabs env vars not available on Vercel preview URLs
+
+**Symptom:** Voice sessions fail on preview URLs (`art-ai-lifeforms-git-*.vercel.app`) — `api/voice-session.js` cannot build a signed URL because `ELEVENLABS_API_KEY` and `ELEVENLABS_AGENT_ID` are undefined.
+
+**Root cause:** Same as Issue 17. Env vars added to Vercel with only "Production" checked are absent from preview deployments.
+
+**Fix:** In Vercel Dashboard → Settings → Environment Variables, edit `ELEVENLABS_API_KEY` and `ELEVENLABS_AGENT_ID` and check **both "Production" and "Preview"** checkboxes. Redeploy to pick up the change. Preview URLs will then have access to the ElevenLabs credentials.
+
+**Note:** There is no code-level fix — this is purely a Vercel dashboard setting.
+
+---
+
+### Issue 22 — Provider badge stays on `groq` during voice session
+
+**Symptom:** When a voice session is active the provider badge in the chat bar still shows `groq` (or whichever text-based provider last responded). It does not switch to indicate an ElevenLabs voice session is running.
+
+**Root cause:** The `onConnect` callback in `voice.js` was never wired to the badge update function in `main.js`. The badge is only updated inside the text-chat `onResponse` path.
+
+**Fix:** In `main.js`, pass an `onConnect` callback to `Voice.start()` (or subscribe to the connect event) that calls the badge setter with `'elevenlabs'`. Pass a corresponding `onDisconnect` callback that restores the previous provider label.
+
+**File:** `lifeforms/01-pin-grid/js/main.js`

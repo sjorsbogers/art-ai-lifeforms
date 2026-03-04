@@ -10,36 +10,24 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ## [Unreleased]
 
-- docs: rewrite lifeform 01 README — voice, structure, persistence, env vars
+### Added
+- ElevenLabs voice agent: `voice.js` session manager, `api/voice-session.js` signed URL endpoint with KV identity/soul injection into system prompt
+- Mic button in chat bar with SVG icon; toggles to stop square while voice session is active
+- Four client tools wired from voice agent to Brain: `setMotion`, `setEmotion`, `setDisplay`, `setGesture`
+- Theatrical boot sequence on voice connect; mic icon appears in thought log
+- FORM brand mark positioned top-right; ElevenLabs attribution positioned bottom-left
+- About drawer with stack description, creator bio (Netherlands / Dubai), and GitHub link
+- Pixel font favicon — FORM letters rendered in 5×7 pixel font on dark background
+- `/rc` slash command for remote-controlling FORM via the events API
+- CC BY-SA 4.0 LICENSE file added to repository
 
-- docs: full README rewrite — voice, stack table, architecture, structure, env vars
-
-- feat: pixel font favicon — FORM letters in 2x2 grid on dark bg
-
-- docs: add development log to README, rule to keep it updated in CLAUDE.md
-
-- fix: update creator bio — Netherlands / Dubai
-
-- feat(voice): show elevenlabs badge when voice session active
-
-- feat: about drawer with stack, creator bio, GitHub link
-
-- feat: FORM brand mark top-right, ElevenLabs attribution bottom-left + README
-
-- fix(voice): re-enable heartbeat; pause it during active voice session
-
-- feat(voice): theatrical boot sequence, mic icon in log, disable heartbeat
-
-- fix(voice): correct SDK import to @11labs/client
-
-- fix(voice): remove overrides from startSession — test bare connection first
-
-- feat(voice): replace emoji mic with flat SVG icon; stop state shows square
-
-- fix(voice): use GET for ElevenLabs signed URL; pass identity prompt as SDK override
-
-- feat: add /rc slash command for remote-controlling FORM via events API
-- feat(voice): add ElevenLabs voice agent — mic button, voice.js session manager, api/voice-session.js signed URL endpoint with KV identity injection
+### Changed
+- Provider badge switches to `elevenlabs` label during an active voice session, reverts on disconnect
+- Heartbeat pauses when voice session is active; resumes automatically on disconnect
+- README fully rewritten — voice section, stack table, architecture overview, env var setup, development log
+- Lifeform 01 README fully rewritten — voice, persistence model, structure, env vars
+- Development log added to README; CLAUDE.md rule added to keep it updated
+- Creator bio updated to reflect Netherlands / Dubai
 
 ---
 

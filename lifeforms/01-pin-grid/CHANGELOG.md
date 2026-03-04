@@ -7,12 +7,26 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 ## [Unreleased]
 
 ### Added
-- ElevenLabs voice agent: `js/voice.js` session manager with 4 client tools (`setMotion`, `setEmotion`, `setDisplay`, `setGesture`) wired to Brain.*
-- `api/voice-session.js`: generates signed ElevenLabs URL, injects FORM's soul/identity/emotional history from KV into system prompt per session
-- Mic button (`🎙`) and voice status indicator in chat bar; toggles to `⏹` while active
-- Voice state: disables text chat input while voice is active, re-enables on disconnect
-- Mode-change callbacks: `breathe` gesture while listening, `noise` gesture while FORM is speaking
-- CSS for `#voice-btn` and `#voice-status` matching terminal aesthetic
+- ElevenLabs voice agent: `js/voice.js` session manager with 4 client tools (`setMotion`, `setEmotion`, `setDisplay`, `setGesture`) wired to `Brain.*`
+- `api/voice-session.js`: GET endpoint that generates a signed ElevenLabs URL and injects FORM's identity, soul, and emotional history from KV into the agent system prompt per session
+- SVG mic button in chat bar; icon changes to stop square while voice is active
+- Voice state management: text chat input disabled while voice is active, re-enabled on disconnect
+- Mode-change callbacks: `breathe` gesture while FORM is listening, `noise` gesture while FORM is speaking
+- Theatrical boot sequence on voice connect (phased log messages); mic icon shown in thought log
+- FORM brand mark fixed top-right; ElevenLabs attribution fixed bottom-left
+- About drawer (info icon, slide-in panel): stack description, creator bio, GitHub link
+- Pixel font favicon — FORM lettering in 5×7 bitmap font, 2×2 letter grid on dark background
+- CSS for `#voice-btn`, `#voice-status`, `#brand-mark`, `#about-drawer`, `#attribution` matching terminal aesthetic
+
+### Changed
+- Provider badge label switches to `elevenlabs` during an active voice session; reverts to previous provider on disconnect (wired via `onConnect`/`onDisconnect` callbacks in `main.js`)
+- Heartbeat loop pauses when voice session is active; resumes automatically on disconnect
+- Creator bio updated to Netherlands / Dubai
+
+### Fixed
+- Voice session dropped immediately on connect: caused by importing `@elevenlabs/client` (wrong package); fixed by switching to `@11labs/client`
+- `api/voice-session.js` returned 502: endpoint was implemented as POST but ElevenLabs SDK expects a GET; changed to GET
+- Provider badge remained on `groq` during voice: `onConnect` callback was not wired in `main.js`; added badge update call there
 
 ---
 
